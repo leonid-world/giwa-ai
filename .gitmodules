@@ -7,3 +7,6 @@
 [submodule "giwa-api"]
 	path = giwa-api
 	url = https://github.com/leonid-world/giwa-api.git
+[submodule "giwa-midnight"]
+	path = giwa-midnight
+	url = https://github.com/leonid-world/giwa-midnight.git
