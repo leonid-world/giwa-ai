@@ -1,0 +1,9 @@
+[submodule "giwa-contrract"]
+	path = giwa-contrract
+	url = https://github.com/leonid-world/giwa-contract.git
+[submodule "giwa-ui"]
+	path = giwa-ui
+	url = https://github.com/leonid-world/giwa-ui.git
+[submodule "giwa-api"]
+	path = giwa-api
+	url = https://github.com/leonid-world/giwa-api.git
