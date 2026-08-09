@@ -119,3 +119,123 @@ Reason
 
 An online reviewer must be able to reach Funding without operator coordination,
 while private keys and unlimited token issuance remain outside the public UI.
+
+---
+
+## ADR-008
+
+Date
+
+2026-08-09
+
+Status
+
+Accepted
+
+Decision
+
+Use `giwa-midnight/` as a dedicated Git submodule workspace for the local-only
+Midnight PoC. The workspace is backed by
+`https://github.com/leonid-world/giwa-midnight.git` and contains the Compact
+contract, shared API boundary, CLI, mock Attestation API, and local Docker
+configuration.
+
+Reason
+
+The PoC needs an independently versioned Midnight toolchain without coupling its
+Node/TypeScript dependencies or generated artifacts to the Vue, Spring Boot, or
+GIWA Solidity submodules.
+
+---
+
+## ADR-009
+
+Date
+
+2026-08-09
+
+Status
+
+Accepted
+
+Decision
+
+Use the official Midnight ZK Loan tutorial as the Phase 1 baseline and prove it
+through its CLI before changing it to the GASOK domain.
+
+Reason
+
+It supplies the required Compact contract, Schnorr attestation flow, private
+witness implementation, CLI orchestration, provider registration, and public
+state inspection in one official end-to-end reference.
+
+---
+
+## ADR-010
+
+Date
+
+2026-08-09
+
+Status
+
+Accepted
+
+Decision
+
+Run this PoC only on the local Midnight `undeployed` network, using a local
+Node, Indexer, Proof Server, and mock Attestation API. Do not deploy a Midnight
+contract to Preprod or Mainnet.
+
+Reason
+
+The PoC is a reproducible local privacy demonstration, not a production
+financial-verification system.
+
+---
+
+## ADR-011
+
+Date
+
+2026-08-09
+
+Status
+
+Accepted
+
+Decision
+
+Keep the existing Vue application, Spring Boot backend, and GIWA Solidity
+contracts intact. Midnight adds only a financial-eligibility result; Vue
+integration begins only after the official and GASOK CLI proof flows succeed.
+
+Reason
+
+GIWA remains responsible for tokenization, funding, repayment, wallets, and
+asset movement. Keeping the proof system isolated prevents an experimental local
+PoC from changing production funding architecture.
+
+---
+
+## ADR-012
+
+Date
+
+2026-08-09
+
+Status
+
+Accepted
+
+Decision
+
+Raw financial values, attestation signatures, witness secrets, mnemonics, and
+provider private keys remain local private data. Public state and application
+display may expose only eligibility outputs, timestamps, provider ID, and a
+company commitment. The initial provider is explicitly mock-attested.
+
+Reason
+
+This preserves the PoC privacy boundary and avoids representing a local mock
+signature as independent real-world financial verification.

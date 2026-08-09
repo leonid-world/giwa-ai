@@ -1,3 +1,8 @@
+# MOST IMPORTANT
+
+Midnight PoC가 production scope가 아니라는 점
+gasok-midnight 브랜치에서만 작업
+
 # GIWA Receivable Financing MVP
 
 ## Overview

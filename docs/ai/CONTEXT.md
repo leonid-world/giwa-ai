@@ -14,6 +14,18 @@ Current Focus
 
 Replacement Contract Address Rollout and Fresh Demo Lifecycle
 
+Midnight PoC Context
+
+The `gasok-midnight` branch additionally contains a local-only Midnight privacy
+PoC. `giwa-midnight/` is an initialized Git submodule workspace backed by
+`https://github.com/leonid-world/giwa-midnight.git`; it contains Node 24
+workspace metadata and the official Midnight SDK dependency lockfile. Phase 1
+must reproduce the official ZK Loan Compact/CLI/Attestation flow unchanged on
+the `undeployed` network before any GASOK financial-field or Vue work. Node
+24.19.0, Docker 29.6.2, and Compact 0.5.1 are installed; the default shell
+selects Node 20, so Midnight commands must run through `nvm use 24`. No Midnight
+proof-server container is currently running.
+
 Database Contract
 
 business_number = CHAR(10), digits only

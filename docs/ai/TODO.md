@@ -273,3 +273,18 @@ browser API flow is working without CORS errors.
 - [x] Verify face value and funding amount cannot be zero.
 - [x] Verify funding amount cannot exceed face value.
 - [x] Verify maturity date must be greater than issue date.
+
+### MIDNIGHT
+
+- [x] Define `giwa-midnight/` as the dedicated Git-submodule workspace
+- [x] Document local-only Midnight trust boundary, network, components, and data classification
+- [x] Add `giwa-midnight` Git submodule from `leonid-world/giwa-midnight`
+- [x] Initialize the Node 24 Midnight workspace and install official SDK dependencies
+- [ ] Official ZK Loan contract compiles
+- [ ] Local Midnight services are healthy
+- [ ] Official CLI deploys a contract
+- [ ] Mock provider is registered
+- [ ] Official loan proof succeeds
+- [ ] Financial fields replace credit fields
+- [ ] GASOK financial proof succeeds via CLI
+- [ ] Vue integration begins

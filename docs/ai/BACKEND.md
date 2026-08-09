@@ -1,3 +1,10 @@
+# MOST IMPORTANT For Midnight work
+
+## Midnight
+
+초기 PoC에서 Spring Boot는 Attestation Provider가 아님
+Mock Attestation API는 giwa-midnight/attestation-api에서 별도 실행
+
 # Backend
 
 ## Stack

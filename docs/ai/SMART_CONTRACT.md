@@ -1,3 +1,8 @@
+# IMPORTANT
+
+GIWA Solidity contract
+Midnight Compact contract
+
 # Smart Contract
 
 ## Contracts

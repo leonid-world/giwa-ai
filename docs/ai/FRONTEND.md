@@ -1,3 +1,11 @@
+# MOST IMPORTANT For Midnight work
+
+## Midnight
+
+Vue 유지
+React 예제는 참고만 함
+CLI 성공 전 UI 연동 금지
+
 # Frontend
 
 ## Pages
@@ -214,9 +222,9 @@ Funder funding
    Approve exactly `fundingAmount`, wait for a successful receipt, verify the
    exact Approval event, and re-read allowance.
 10. Never automatically open `fundReceivable` after approval. The user must review
-   the second step and click it separately.
+    the second step and click it separately.
 11. Immediately before funding, repeat the complete onchain, balance, and allowance
-   preflight, then call `fundReceivable`.
+    preflight, then call `fundReceivable`.
 12. Verify exactly one ReceivableFunded event, MockKRW Transfer from Funder to
     Seller, NFT Transfer from escrow to Funder, FUNDED post-state, and Funder NFT
     ownership.
@@ -264,9 +272,9 @@ Buyer repayment
 9. Immediately before repayment, repeat the complete onchain, balance, allowance,
    and current-owner preflight, then call `repayReceivable`.
 10. Verify exactly one ReceivableRepaid event and one MockKRW Transfer from Buyer
-   to the receipt-block current NFT owner for `faceValue`.
+    to the receipt-block current NFT owner for `faceValue`.
 11. Read the receipt block and require onchain status REPAID while NFT ownership
-   remains unchanged.
+    remains unchanged.
 12. Confirm REPAY_RECEIVABLE through the backend journal, then call
     `POST /receivables/{id}/repaid` with only `txHash`.
 
