@@ -18,13 +18,77 @@ Midnight PoC Context
 
 The `gasok-midnight` branch additionally contains a local-only Midnight privacy
 PoC. `giwa-midnight/` is an initialized Git submodule workspace backed by
-`https://github.com/leonid-world/giwa-midnight.git`; it contains Node 24
+`https://github.com/leonid-world/giwa-midnight.git`; it contains Node 22
 workspace metadata and the official Midnight SDK dependency lockfile. Phase 1
 must reproduce the official ZK Loan Compact/CLI/Attestation flow unchanged on
 the `undeployed` network before any GASOK financial-field or Vue work. Node
-24.19.0, Docker 29.6.2, and Compact 0.5.1 are installed; the default shell
-selects Node 20, so Midnight commands must run through `nvm use 24`. No Midnight
-proof-server container is currently running.
+24.19.0, Docker 29.6.2, and Compact 0.5.1 are installed. Use Node 22.21.1 for
+the official API and CLI runtime through `nvm use 22`; Compact compilation has
+also been verified with Node 24. The official Proof Server is running locally.
+
+Phase 1 progress: the unmodified official ZK Loan `contract/` source has been
+imported from `midnightntwrk/example-zkloan`. With Node 24.19.0 and Compact
+0.5.1, its eight Compact circuits compiled successfully and generated
+`contract/src/managed/zkloan-credit-scorer/{contract,keys,zkir,compiler}`.
+The official Midnight Local Dev Node (`127.0.0.1:9944`), Indexer
+(`127.0.0.1:8088`), and Proof Server (`127.0.0.1:6300`) are running and healthy
+through the official standalone Docker Compose definition.
+The official mock Attestation API is running on `127.0.0.1:4000` under Node
+22.21.1 and its health endpoint returns provider ID 1. Node 24.19.0 cannot run
+this official Restify/SPDY dependency path because it no longer exposes
+`http_parser`; use Node 22 for the official API and CLI runtime, while Compact
+compilation remains verified on Node 24. The contract simulator passes 61/61
+tests. Phase 1 is complete: the official CLI synchronized its wallet, received
+local NIGHT/DUST, deployed the contract, registered Mock Provider 1, fetched a
+mock attestation, generated and submitted a loan proof, and queried the public
+contract state on the local `undeployed` network.
+
+The initial Provider registration failure, `expected instance of StateValue`,
+was caused by two physical WASM runtime copies after the custom workspace lock
+resolved `@midnight-ntwrk/onchain-runtime-v3` to both 3.1.0 and 3.0.0. The
+official ZK Loan lockfile uses one 3.0.0 instance. The workspace therefore pins
+and hoists exactly one 3.0.0 runtime through a direct dependency plus npm
+override/resolution. Do not remove that compatibility pin while Midnight.js
+remains on 4.1.1.
+
+The tracked CLI `.env.example` previously contained a non-empty storage
+password and the value is present in the current submodule Git history. The
+working template is blank now. Treat the former password as exposed; rotate the
+ignored local `.env` value and recreate the local encrypted private-state DB
+together when the current disposable Phase 1 state is no longer needed. Do not
+delete or rewrite either one automatically.
+
+Phase 2 GASOK CLI proof flow is complete. The transformed Compact contract uses
+`annualRevenueKrw: Uint<64>`, `debtRatioBps: Uint<32>`, and
+`overdueCount: Uint<16>` as private witness values and applies policy version 1:
+revenue at least 500,000,000 KRW, debt ratio at most 20,000 basis points
+(200.00%), and overdue count at most 1. The official loan amount, tier,
+authorized amount, response flow, blacklist, and loan/PIN-migration ledger data
+were removed because they have no approved GASOK meaning.
+
+The local Mock Attestation API accepts decimal strings, validates Compact
+integer ranges, signs the three values plus a pseudonymous commitment hash,
+does not echo raw values, and binds only to `127.0.0.1`. Contract tests pass
+18/18 and API tests pass 16/16. A local CLI E2E deployed the GASOK contract,
+registered Mock Provider 1, submitted valid eligible and ineligible proofs, and
+queried two public results containing only commitment, eligibility, Provider ID,
+and policy version.
+
+Phase 3A public-result viewing is complete. `giwa-midnight/api` is a
+localhost-only read adapter on `127.0.0.1:4100`; it fixes the network to
+`undeployed`, queries the local Indexer through the official provider, decodes
+state with the generated `GasokEligibility.ledger()`, and returns only the four
+approved public result fields. `giwa-ui` adds a development-only authenticated
+`/midnight` learning page, isolated service/composable, Vite proxy, navigation,
+and Dashboard entry. A live browser check displayed the two existing eligible
+and ineligible results. The page does not handle raw financial values, wallets,
+proofs, attestations, or Funding decisions, and no Spring Boot integration has
+begun.
+
+Full browser proof submission is not implemented. The official ZK Loan UI is
+Preprod-only because Lace cannot balance or sign for local `undeployed`; Preprod
+is prohibited here. The next Phase 3B step therefore requires approval of a
+local-wallet approach or a Node bridge and its new trusted-signer boundary.
 
 Database Contract
 

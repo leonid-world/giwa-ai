@@ -232,10 +232,69 @@ Decision
 
 Raw financial values, attestation signatures, witness secrets, mnemonics, and
 provider private keys remain local private data. Public state and application
-display may expose only eligibility outputs, timestamps, provider ID, and a
-company commitment. The initial provider is explicitly mock-attested.
+display may expose only eligibility output, provider ID, policy version, and a
+pseudonymous commitment. The initial provider is explicitly mock-attested.
 
 Reason
 
 This preserves the PoC privacy boundary and avoids representing a local mock
 signature as independent real-world financial verification.
+
+---
+
+## ADR-013
+
+Date
+
+2026-08-10
+
+Status
+
+Accepted
+
+Decision
+
+Phase 2 exposes only a pseudonymous verification commitment, binary funding
+eligibility, Mock Provider ID, and policy version. Policy version 1 privately
+checks annual revenue of at least 500,000,000 KRW, debt ratio of at most 200.00%,
+and overdue count of at most 1. Do not publish raw values or add risk tiers,
+maximum funding ratios, issued/expiry timestamps, a real-company binding, or a
+GIWA funding gate until their policies and trust sources are separately approved.
+
+Reason
+
+Only the binary three-condition policy is currently defined. Additional public
+categories would reveal more about private financial ranges and would invent
+financial and time semantics that the PoC has not specified. CLI-only Phase 2
+also has no approved binding between its local secret-derived commitment and a
+GASOK business identity.
+
+---
+
+## ADR-014
+
+Date
+
+2026-08-12
+
+Status
+
+Accepted
+
+Decision
+
+Implement Phase 3A as a development-only, wallet-free public-result viewer in
+the existing Vue application. A localhost-only `giwa-midnight/api` adapter uses
+the official Indexer provider and generated Compact ledger decoder and returns
+only the approved public result DTO. Keep the page independent of Funding,
+Spring Boot, MySQL, MetaMask, and GASOK company/receivable identities. Defer
+browser proof submission until a local `undeployed` signer architecture is
+separately approved; do not use Preprod as a workaround.
+
+Reason
+
+The CLI flow already proves both eligibility outcomes, so public state can be
+observed without any private input or wallet. The official ZK Loan browser path
+depends on Lace and is Preprod-only because Lace cannot sign the local chain.
+An honest read-only stage makes the runtime observable for learning without
+inventing a browser proof flow or adding an unreviewed trusted signer service.

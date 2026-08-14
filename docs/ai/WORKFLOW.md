@@ -52,7 +52,17 @@ It must not change the production GIWA funding architecture.
 The existing GASOK flow remains intact.
 Midnight is inserted only as an additional financial eligibility verification step.
 
-### Integrated Business Flow
+### Planned Integrated Business Flow
+
+This is a future Phase 3 product flow, not current Phase 2 enforcement. The
+CLI-only proof result does not yet authorize or block any GIWA funding action.
+Making Midnight eligibility a GIWA funding gate requires separate approval and
+an architectural decision after the CLI and Vue proof flows work.
+
+Current Phase 3A is narrower than this future flow: an isolated, development-only
+Vue page reads the two CLI-created public results through a local read-only
+adapter. It does not collect financial values, create proofs, identify a GASOK
+company, or affect Funding.
 
 회원가입
 ↓
@@ -101,7 +111,7 @@ Compact Circuit이 다음 항목 검증
   ↓
   Funder가 Midnight Verification 결과 확인
   ↓
-  Funding Eligibility가 VERIFIED인 경우 Funding 진행
+  별도 승인 전에는 참고 정보로만 표시하고 Funding gate로 사용하지 않음
   ↓
   잔액 부족 시 Funder가 사전 예치된 데모 mKRW 1회 충전
   ↓
@@ -170,16 +180,15 @@ Raw financial values must not be written to:
 - application logs
 - committed local files
 
-Only verification outputs may be exposed, for example:
+The initial Phase 2 public output may expose only:
 
-- verificationStatus
 - fundingEligibility
-- riskTier
-- maximumFundingRatio
 - providerId
-- proofIssuedAt
-- proofExpiresAt
-- companyCommitment
+- policyVersion
+- pseudonymous verification commitment
+
+Risk tiers, maximum funding ratios, issued/expiry timestamps, and an actual
+GASOK-company binding are deferred until their policies are approved.
 
 ## Trust Boundary
 
@@ -250,8 +259,13 @@ Do not modify existing GIWA Solidity contracts unless Midnight integration expli
 
 ### Phase 3 — Vue Integration
 
-- Existing Vue project structure is preserved.
-- React dependencies are not introduced.
-- Midnight code is isolated in dedicated services or composables.
-- The Vue application only integrates a flow already proven through CLI.
-- Funder can view Midnight verification results before funding.
+- [x] Existing Vue project structure is preserved.
+- [x] React dependencies are not introduced.
+- [x] Midnight code is isolated in dedicated services or composables.
+- [x] A dev-only `/midnight` page reads the CLI-proven public result through a
+  localhost-only adapter without wallet, proof, or private-state access.
+- [x] Mock-attested, company-unbound, and non-funding-gate limitations are shown.
+- [ ] Choose and approve a local `undeployed` browser submission architecture;
+  official Lace local signing is unavailable and Preprod is out of scope.
+- [ ] Only after that decision, verify attestation, proof generation, transaction
+  submission, and Indexer refresh from Vue end to end.

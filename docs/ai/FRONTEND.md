@@ -6,6 +6,13 @@ Vue 유지
 React 예제는 참고만 함
 CLI 성공 전 UI 연동 금지
 
+Phase 3A uses the authenticated, development-only `/midnight` route. It reads
+only CLI-created public results through `/midnight-api`; the dedicated service
+and composable must not import the Node CLI, wallet, Proof Server, attestation,
+or private-state code. Production keeps `VITE_MIDNIGHT_POC_ENABLED=false`.
+The page must say mock-attested, company/receivable-unbound, and not a Funding
+gate. Full browser proof submission waits for an approved local signer design.
+
 # Frontend
 
 ## Pages

@@ -23,6 +23,9 @@
   transactions. The local endpoint is port 9944.
 - **Indexer**: GraphQL service for querying and subscribing to public Midnight
   ledger state. The local endpoint is port 8088.
+- **Read-only Midnight API**: Local port-4100 adapter that queries the Indexer,
+  decodes the Compact public ledger, and returns the approved Vue DTO. It does
+  not create proofs, sign transactions, or access private state.
 - **Midnight Local Dev**: Official Docker-based local environment containing a
   Node, Indexer, Proof Server, and funding wizard.
 - **`undeployed`**: Network ID for the local Midnight development environment.
@@ -33,5 +36,6 @@
   result to a company context without revealing raw financial values.
 - **Funding eligibility**: The public boolean/result indicating whether the
   private financial witness met the Compact policy.
-- **Lace Wallet**: Midnight-compatible wallet. It is not required during the
-  CLI-first Phase 1.
+- **Lace Wallet**: Midnight-compatible browser wallet. It is not required for
+  CLI phases, and the official ZK Loan UI documents that Lace cannot balance or
+  sign for the local `undeployed` chain.

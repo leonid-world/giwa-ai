@@ -1,5 +1,24 @@
 # REST API
 
+## Midnight Local Read API
+
+This is `giwa-midnight/api`, not the Spring Boot REST API. It is a local-only,
+GET-only adapter bound to `127.0.0.1:4100` for the development Vue viewer.
+
+- `GET /health`
+- `GET /v1/contracts/{64-hex-address}/eligibility-results`
+
+The result DTO contains `networkId`, `contractAddress`, and `results`; each
+result contains only `commitment`, boolean `eligible`, decimal-string
+`providerId`, and decimal-string `policyVersion`. Every response is `no-store`.
+The adapter has no wallet, signing, proof, attestation, mutation, MySQL, or GIWA
+endpoint. Vite reaches it through same-origin `/midnight-api` in development.
+Only the configured GASOK contract is accepted; other well-formed addresses
+return `404 / UNAPPROVED_CONTRACT_ADDRESS`. The Indexer query has a 10-second
+deadline so a stalled local service becomes a retryable UI error.
+
+---
+
 ## Auth
 
 POST /auth/signup

@@ -66,3 +66,16 @@ GIWA remains responsible for:
 8. Integrate the backend only after the CLI and Vue proof flows work.
 
 Do not skip directly to frontend integration.
+
+### Learning Requirement
+
+The project owner is learning Midnight by implementing and observing the PoC.
+For every Midnight-related task update, explain briefly what the component or
+command does in the proof flow and why it is needed. Relate explanations to the
+currently implemented code or observed runtime behavior, not theory alone.
+
+### Change Visibility
+
+When work touches `giwa-midnight`, report both the GASOK root Git status and
+the `giwa-midnight` submodule Git status. Explain that the root tracks only the
+submodule commit pointer while the inner repository tracks its own files.

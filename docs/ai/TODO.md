@@ -279,12 +279,40 @@ browser API flow is working without CORS errors.
 - [x] Define `giwa-midnight/` as the dedicated Git-submodule workspace
 - [x] Document local-only Midnight trust boundary, network, components, and data classification
 - [x] Add `giwa-midnight` Git submodule from `leonid-world/giwa-midnight`
-- [x] Initialize the Node 24 Midnight workspace and install official SDK dependencies
-- [ ] Official ZK Loan contract compiles
-- [ ] Local Midnight services are healthy
-- [ ] Official CLI deploys a contract
-- [ ] Mock provider is registered
-- [ ] Official loan proof succeeds
-- [ ] Financial fields replace credit fields
-- [ ] GASOK financial proof succeeds via CLI
-- [ ] Vue integration begins
+- [x] Initialize the Node 22 Midnight workspace and install official SDK dependencies
+- [x] Official ZK Loan contract compiles
+- [x] Local Midnight services are healthy
+- [x] Official CLI synchronizes its wallet and deploys a contract on the local network
+- [x] Mock provider is registered
+- [x] Official loan proof succeeds and the public contract state is queryable
+- [ ] Rotate the local Midnight storage password and recreate the encrypted CLI
+  private-state DB when ready; the former `.env.example` value exists in the
+  current submodule Git history, so decide separately whether to rewrite that history
+- [x] Financial fields replace credit fields
+- [x] GASOK eligible and ineligible proofs succeed via CLI and expose no raw financial values in public state
+- [x] Add the dev-only Vue `/midnight` page and local read-only API for the two
+  CLI-proven public eligibility results
+- [x] Verify the Vue page against the live local Indexer: one eligible and one
+  ineligible result, with no raw financial values exposed
+- [ ] Approve a Phase 3B local browser submission architecture; official Lace
+  cannot sign `undeployed`, Preprod is forbidden, and a local bridge would add
+  a new trusted signer boundary
+
+Phase 1 complete: the workspace pins one physical
+`@midnight-ntwrk/onchain-runtime-v3@3.0.0` instance, matching the official ZK
+Loan lockfile and compatibility matrix. This fixed the duplicate-WASM-class
+`StateValue` failure. The official CLI deployed the contract, registered Mock
+Provider 1, fetched a mock attestation, generated and submitted the loan proof,
+and queried the public contract state on the local `undeployed` network.
+
+Phase 2 CLI complete: the Compact circuit privately evaluates integer KRW
+annual revenue, debt ratio in basis points, and overdue count. The local CLI E2E
+recorded both `eligible=true` at the exact policy boundary and `eligible=false`
+one KRW below the revenue boundary. Public state contained only pseudonymous
+commitments, eligibility, Mock Provider ID, and policy version.
+
+Phase 3A read side complete: `giwa-midnight/api` decodes the public Compact
+ledger through the official Indexer provider and serves a localhost-only GET
+API. The existing Vue app exposes a development-only, authenticated ZK learning
+page and displays the two live public results. It does not submit proofs or
+change Funding, Spring Boot, MySQL, MetaMask, or GIWA contracts.
