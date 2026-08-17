@@ -282,7 +282,23 @@ browser API flow is working without CORS errors.
 - [x] Initialize the Node 22 Midnight workspace and install official SDK dependencies
 - [x] Official ZK Loan contract compiles
 - [x] Local Midnight services are healthy
+- [ ] Design and approve explicit persistent storage and recovery for the local
+  Midnight Node and Indexer before treating contract addresses as durable across
+  container recreation
+- [ ] Add a bounded end-to-end CLI/Bridge join deadline so a nonexistent or
+  newly unreachable deployment does not wait indefinitely in
+  `watchForDeployTxData` and instead reports a clear `NOT_FOUND`. The Bridge's
+  10-second startup preflight validates the address first but does not itself
+  bound every later SDK join watcher
+- [ ] Preserve and display actionable `Wallet.Sync` root causes, including the
+  Node/Indexer endpoint and transport failure, instead of `[object Object]`
 - [x] Official CLI synchronizes its wallet and deploys a contract on the local network
+- [x] Preserve existing contract-scoped CLI private state when joining after a
+  restart; create a fresh participant state only when none exists locally
+- [x] Restore the replacement deployment's original encrypted admin private
+  state after the pre-fix Join overwrite; verify the recovered derived key
+  against public `contractAdmin` before and after the official provider write,
+  without logging or persisting the plaintext secret
 - [x] Mock provider is registered
 - [x] Official loan proof succeeds and the public contract state is queryable
 - [ ] Rotate the local Midnight storage password and recreate the encrypted CLI
@@ -290,13 +306,111 @@ browser API flow is working without CORS errors.
   current submodule Git history, so decide separately whether to rewrite that history
 - [x] Financial fields replace credit fields
 - [x] GASOK eligible and ineligible proofs succeed via CLI and expose no raw financial values in public state
-- [x] Add the dev-only Vue `/midnight` page and local read-only API for the two
+- [x] Add the initial dev-only Vue `/midnight` page and local read-only API for
   CLI-proven public eligibility results
-- [x] Verify the Vue page against the live local Indexer: one eligible and one
-  ineligible result, with no raw financial values exposed
-- [ ] Approve a Phase 3B local browser submission architecture; official Lace
-  cannot sign `undeployed`, Preprod is forbidden, and a local bridge would add
-  a new trusted signer boundary
+- [x] Verify the initial Vue read side against the live local Indexer with no raw
+  financial values exposed
+- [x] Seal GIWA chain `91342` and ReceivableFinance
+  `0x0f264334f98BA0d22f7Fc6Bb901a5Fa36158a315` into the new local Compact
+  deployment
+- [x] Resolve the canonical Seller/Buyer wallet for a uint256 receivable ID
+  through GIWA RPC in the Mock Attestation Provider
+- [x] Bind the provider signature to eight fields: private policy inputs,
+  company-commitment hash, GIWA receivable subject, Midnight deployment,
+  provider, and policy version
+- [x] Store only an opaque lookup key with eligibility, provider ID, and policy
+  version; reject an exact same-key replay
+- [x] Verify receivable `#1` through CLI end to end with a separate eligible
+  Seller result and ineligible Buyer result
+- [x] Emit the correlation-sensitive proof capability only to the CLI terminal
+  for intentional verifier sharing
+- [x] Reject zero/out-of-range Provider secrets and the Jubjub identity public
+  key in both Provider registration and proof verification
+- [x] Pin the Mock Provider and read adapter to the approved local Midnight
+  deployment, and reject another address before GIWA RPC or signing
+- [x] Bound local Attestation requests/responses and timeouts; restrict CLI
+  Provider URLs to a redirect-free loopback root
+- [x] Keep fresh wallet mnemonics out of file logs and enforce owner-only `0600`
+  CLI log permissions
+- [x] Bound unresolved read-adapter Indexer work to one in-flight SDK query
+- [x] Add the Provider 2 two-minute, one-shot EIP-712 issuance gate: CLI
+  challenge/response handoff, dev-only `/midnight/authorize` MetaMask signing,
+  and Mock Provider canonical EOA recovery before Schnorr attestation
+- [x] Keep raw financial values and the hidden request salt out of Vue; exchange
+  only the exact salted authorization request and minified one-line response
+- [x] Register Provider 2 on the current replacement deployment and confirm the
+  public contract state reports one registered Provider
+- [x] Execute a real Seller MetaMask authorization plus local attestation, proof
+  generation, Midnight submission, and independent Indexer result verification
+- [ ] Decide and implement independent Seller/Buyer actors and encrypted private
+  states instead of demonstrating both roles from one CLI actor
+- [ ] Define refresh rounds, allowed replacement behavior, freshness/latest
+  selection, expiry, and revocation semantics before allowing another result for
+  the same receivable subject
+- [ ] Design secure proof-capability delivery and verifier access; do not expose
+  correlation capabilities through logs or a public unauthenticated listing
+- [x] Update the existing Vue viewer for Phase 2.5 capability-based exact
+  resolution without publicly listing receivable-party correlations
+- [ ] Add direct exhaustive frontend unit tests for the complete pre-existing
+  capability schema/response module and role-authorization schema/real-signer
+  module. The focused proof-flow suite covers its mocked integration boundary,
+  timeout/abort, races, same-origin configuration, and both route flags
+- [x] Approve ADR-018's trusted local Proof Bridge to reuse the already-proven
+  CLI participant, encrypted private state, wallet balance, Provider 2 flow,
+  Proof Server, and current contract
+- [x] Correct the former Lace assumption: official Midnight Local Dev supports
+  Lace on local `undeployed`; the Bridge is a minimal-change custodial PoC
+  choice, not a technical requirement
+- [x] Implement the port-4200 loopback Proof Bridge with CSPRNG body-only
+  sessions, one active proof, one-shot authorization, no ambiguous auto-retry,
+  bounded safe HTTP behavior, and a common CLI/Bridge private-state process lock
+- [x] Add an internal authorization-deadline timer so an unsigned prepared tuple
+  is discarded and its active slot is released even when no later poll arrives
+- [x] Automatically purge terminal capability/error/status records after 60
+  seconds with unref timers, without relying on lazy sweep or a later request
+- [x] Bound the startup Indexer preflight to 10 seconds, keep port 4200 closed on
+  failure, seal validated GIWA configuration in memory, and remove per-challenge
+  Indexer queries while raw inputs exist; record the SDK's non-abortable single
+  timed-out-startup-query limitation
+- [x] Attempt encrypted-state sanitization after every Bridge success/failure,
+  retry cleanup once, and require stale-witness sanitization before another
+  prepare; disclose that dropping JavaScript references is not guaranteed
+  memory zeroization
+- [x] Immediately preserve and return a finalized proof capability without a
+  per-session Indexer query; permit resolver-only retry and never proof
+  resubmission for delayed public visibility
+- [x] Add the separately gated dev-only `/midnight/prove` route; clear raw
+  values/PIN after challenge creation, require an explicit MetaMask action, poll
+  status, and independently resolve the completed capability via read API/Indexer
+- [x] Disable both plugin and runtime Vue Devtools while the raw-input proof
+  route is enabled and verify no proof-flow value enters Pinia, storage, URL,
+  logs, telemetry, Spring, or MySQL
+- [x] Add Bridge session, HTTP security, one-shot/expiry/cancellation,
+  private-state cleanup, and common process-lock tests; keep Docker/LevelDB live
+  E2E separate from the non-environment suite
+- [ ] Restore the CLI workspace ESLint binary/dependency and run its existing
+  lint script; current Bridge typecheck/build and 20-file/242-test pass result
+  plus 1 optional environment file/test skip are verified, but `npm run lint`
+  currently reports `eslint: command not found`
+- [x] Override and lock Restify 11's transitive `find-my-way`/`send` to
+  `9.8.0`/`1.2.1`; confirm the installed tree and zero high-severity npm audit
+  findings
+- [x] Complete focused Vue route/service/composable tests for success, failure, expiry,
+  cancellation, races, unmount, timeout, strict response matching, and
+  independent final resolution; current Node 24.19.0 result is 8 files / 36
+  tests plus changed-file ESLint/Oxlint/Prettier, production build, and zero
+  high-severity `npm audit` findings
+- [x] Verify the production artifact contains zero proof route/chunk/API marker
+  matches, and smoke the live Seller `#1` challenge through Vue → Bridge with
+  all four private values absent from the post-challenge DOM and captured console
+- [ ] Repeat the browser flow with an available MetaMask provider; the in-app
+  browser smoke stopped before EIP-712 signing and is not a proof/transaction E2E
+- [ ] Execute real Seller and Buyer `/midnight/prove` local E2E runs before
+  marking browser-triggered proof submission complete
+- [ ] Treat direct Vue + Lace as a later self-custody replacement requiring a
+  separate identity/private-state migration ADR, not a parallel hidden path
+- [ ] Integrate Spring Boot only later if the completed CLI and Vue flows require
+  coordination; do not make eligibility a Funding gate without a separate ADR
 
 Phase 1 complete: the workspace pins one physical
 `@midnight-ntwrk/onchain-runtime-v3@3.0.0` instance, matching the official ZK
@@ -308,11 +422,55 @@ and queried the public contract state on the local `undeployed` network.
 Phase 2 CLI complete: the Compact circuit privately evaluates integer KRW
 annual revenue, debt ratio in basis points, and overdue count. The local CLI E2E
 recorded both `eligible=true` at the exact policy boundary and `eligible=false`
-one KRW below the revenue boundary. Public state contained only pseudonymous
-commitments, eligibility, Mock Provider ID, and policy version.
+one KRW below the revenue boundary. Each result entry contained only a
+pseudonymous commitment, eligibility, Mock Provider ID, and policy version;
+public admin and Provider-registry control state remained separate.
 
-Phase 3A read side complete: `giwa-midnight/api` decodes the public Compact
-ledger through the official Indexer provider and serves a localhost-only GET
-API. The existing Vue app exposes a development-only, authenticated ZK learning
-page and displays the two live public results. It does not submit proofs or
-change Funding, Spring Boot, MySQL, MetaMask, or GIWA contracts.
+The initial Phase 3A list viewer is retired. The current read side accepts one
+intentionally shared Proof capability in the development-only Vue `/midnight`
+page and sends it to the adapter's exact
+`POST /v1/eligibility-results/resolve` endpoint. The adapter is the sole
+authority for the pinned Midnight contract, does not expose an anonymous result
+list, and returns only the matching receivable, role, canonical party wallet,
+and minimal proof result. The page does not submit proofs or change Funding,
+Spring Boot, MySQL, MetaMask, or GIWA contracts.
+
+Phase 2.5 binding was completed on the now-superseded local contract
+`a8c0c1997c424dd1215d055fb5688200194263c7be5deef8b4e7620d2cdceb2c`.
+That deployment separated Seller and Buyer results for one canonical GIWA
+receivable context.
+
+The Mock Provider resolves that context through GIWA RPC, the eight-field
+signature prevents cross-context reuse, and the ledger publishes only an opaque
+key plus the minimal result. Receivable `#1` produced Seller `true` and Buyer
+`false` through the CLI from deliberately different caller-supplied mock inputs.
+This proves role-context separation, not either party's actual finances. Live
+adapter smoke tests resolved those same role-labeled outcomes and rejected a
+tampered capability with HTTP 400. Actual development-browser submissions also
+resolved Seller `true` and Buyer `false`, while Node 22 lint/build checks passed.
+That is only the browser read path.
+
+The standalone chain was reset when its Node container was recreated on
+2026-08-17, so those results and capabilities remain historical evidence only.
+The current replacement deployment is
+`7e3ea9d741ce0f5862db6f46d0ad720be2586cd7d0405ec77e4a0478aa50f4fb`;
+Provider 2 registration and the ADR-017 real Seller runtime E2E were completed
+there. ADR-018 real Seller/Buyer browser-triggered runs remain pending.
+
+ADR-017 code complete: Provider 2 now has a separate two-step issuance gate.
+The CLI retains private values and a hidden salt, hands a two-minute typed
+request to the dev-only Vue `/midnight/authorize` tool, accepts its one-line
+MetaMask response, and sends it back to the Mock Provider. The Provider consumes
+the challenge once, rechecks the GIWA role and private commitment, and recovers
+the canonical EOA before issuing the unchanged Schnorr attestation. Compact and
+the contract logic are unchanged and do not independently verify EIP-712;
+Provider 1 results remain legacy. The local deployment address changed only
+because the standalone chain was recreated.
+
+The complete Attestation API suite passes `72/72`. CLI tests pass `60` with `1`
+optional environment E2E skipped, and UI lint/build checks pass. Provider 2
+registration and a real Seller MetaMask-to-Midnight local runtime E2E are
+complete on the current replacement deployment. ADR-018 is accepted for the
+trusted local Bridge and `/midnight/prove` flow. Secure multi-user capability
+delivery/access, independent actors, public-result freshness/expiry, direct Lace
+self-custody, and backend coordination remain later work.

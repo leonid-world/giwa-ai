@@ -46,6 +46,100 @@
   were valid; owner tasks now retry state reads at the confirmed block and warn
   without treating an already confirmed transfer as failed.
 
+## Midnight Local-Only Proof Bridge
+
+Midnight is not part of the Railway or Vercel deployment. Never add the Proof
+Bridge, Mock Attestation API, Proof Server, local Node/Indexer, Midnight wallet
+seed, private-state password, raw financial values, or
+`VITE_MIDNIGHT_PROOF_BRIDGE_ENABLED=true` to a production environment. No
+Midnight contract is deployed to Preprod or Mainnet.
+
+The development stack uses these loopback-only processes:
+
+- Midnight Node `127.0.0.1:9944`
+- Midnight Indexer `127.0.0.1:8088`
+- Midnight Proof Server `127.0.0.1:6300`
+- Mock Attestation API `127.0.0.1:4000`
+- read-only capability API `127.0.0.1:4100`
+- trusted Proof Bridge `127.0.0.1:4200`
+- Vue development server on strict `127.0.0.1:5173`, with same-origin
+  `/midnight-api` and a proof-flag-conditional `/midnight-proof` proxy
+
+Use Node 22.21.1 for the current Midnight CLI/Bridge runtime. Start
+Node/Indexer/Proof Server
+through `giwa-midnight/cli/standalone.yml`, then the already-registered Provider
+2 Mock Attestation API, the read API, and the Proof Bridge. Use Node 24.19.0 for
+the current `giwa-ui` toolchain and start Vue last; some installed transitive UI
+dependencies require Node `>=24.15` or `>=22.22.2`. The
+Provider process key must match the Provider 2 public key registered in the
+current local Compact deployment; restarting an ephemeral Provider with a new
+key requires intentional re-registration before proof creation.
+
+From the `giwa-midnight` workspace, the Bridge command is:
+
+```bash
+nvm use 22.21.1
+npm run proof-bridge --workspace zkloan-credit-scorer-cli
+```
+
+From `giwa-ui`, use:
+
+```bash
+nvm use 24.19.0
+npm run dev
+```
+
+The process performs its wallet/private-state checks plus a 10-second-bounded
+Indexer contract/Provider preflight before opening port 4200, then seals the
+validated GIWA configuration in memory. Per-challenge preparation uses that
+cache instead of querying the Indexer while raw inputs exist. A missing existing
+contract-scoped private state, mismatched running Provider 2 key, unavailable
+local service, or already-held process lock must fail closed rather than create
+a new participant or overwrite state. The SDK Indexer query has no abort signal,
+so one timed-out startup query may remain internally pending, but the server
+does not open and no raw proof input has been accepted. This public preflight
+does not yet impose an end-to-end deadline on every subsequent SDK
+`joinContract` watcher; the Bridge still never opens its HTTP port until join
+finishes, and a full join deadline remains a tracked hardening item.
+
+The Bridge deliberately uses the public, disposable Local Dev genesis wallet
+seed already used by the standalone CLI flow. It is not a production secret and
+must never be reused on Preprod, Mainnet, or for assets with value. Real wallet
+seeds and private keys remain prohibited in source, Vue, Spring, logs, and chat.
+
+Do not run the interactive CLI and Proof Bridge concurrently. They share one
+encrypted LevelDB participant state and wallet and use a common fail-fast
+process lock. Do not delete or recreate the local Node container when the
+current disposable contract/results must remain available; the compose setup
+does not yet provide an approved durable Node/Indexer recovery design.
+
+The Bridge is a trusted custodial single-user development process. Keep all
+ports on literal loopback, leave CORS disabled, and access it only through the
+Vue dev proxy. Current official Local Dev also supports Lace on `undeployed`,
+but ADR-018 intentionally reuses the proven CLI participant instead of creating
+and migrating a second Lace identity/private state. This does not authorize a
+remote Bridge deployment.
+
+Only the ignored/local development Vue environment may enable the route:
+
+```env
+VITE_MIDNIGHT_POC_ENABLED=true
+VITE_MIDNIGHT_PROOF_BRIDGE_ENABLED=true
+VITE_MIDNIGHT_PROOF_API_URL=/midnight-proof
+```
+
+`VITE_MIDNIGHT_PROOF_API_URL` must remain a same-origin absolute path. Do not
+replace it with `http://127.0.0.1:4200`; the Vite proxy supplies the same-origin
+browser boundary and the Bridge intentionally enables no CORS. Production and
+tracked production configuration must keep both feature flags false.
+
+With the proof flag on, both the Vite devtools plugin and Vue runtime Devtools
+exposure are disabled, strict port `5173` prevents Origin drift, and the
+port-4200 proxy is present. With the flag off, that proxy is absent. If the
+Bridge returns `complete` but the read resolver has not seen the result yet, the
+Midnight transaction has already finalized: retry only public resolution. Do
+not restart the proof session or submit another proof for an Indexer delay.
+
 ## Contract Deployment
 
 GIWA Sepolia Hardhat configuration:

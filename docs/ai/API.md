@@ -3,19 +3,155 @@
 ## Midnight Local Read API
 
 This is `giwa-midnight/api`, not the Spring Boot REST API. It is a local-only,
-GET-only adapter bound to `127.0.0.1:4100` for the development Vue viewer.
+read-only adapter bound to `127.0.0.1:4100` for the development Vue viewer.
 
 - `GET /health`
-- `GET /v1/contracts/{64-hex-address}/eligibility-results`
+- `POST /v1/eligibility-results/resolve`
 
-The result DTO contains `networkId`, `contractAddress`, and `results`; each
-result contains only `commitment`, boolean `eligible`, decimal-string
-`providerId`, and decimal-string `policyVersion`. Every response is `no-store`.
-The adapter has no wallet, signing, proof, attestation, mutation, MySQL, or GIWA
-endpoint. Vite reaches it through same-origin `/midnight-api` in development.
-Only the configured GASOK contract is accepted; other well-formed addresses
-return `404 / UNAPPROVED_CONTRACT_ADDRESS`. The Indexer query has a 10-second
-deadline so a stalled local service becomes a retryable UI error.
+The POST body is the exact nine-field version-1 Proof capability printed by the
+CLI. POST is used so its correlation-sensitive fields are not placed in a URL;
+the operation does not mutate state. The adapter validates the pinned Midnight
+deployment and GIWA context, recomputes the lookup key, and reads exactly one
+public ledger entry. It returns `networkId`, `contractAddress`, the receivable
+context, and only `lookupKey`, boolean `eligible`, decimal-string `providerId`,
+and decimal-string `policyVersion`. It never exposes an anonymous result list.
+
+Every response is `no-store`. The adapter has no wallet, signing, proof,
+attestation, mutation, MySQL, or GIWA-RPC endpoint. Vite reaches it through the
+same-origin `/midnight-api` proxy in development. Only the configured GASOK
+contract is accepted; other addresses return
+`400 / UNAPPROVED_CONTRACT_ADDRESS`. The Indexer query has a 10-second deadline
+and permits only one in-flight SDK query so a stalled local service becomes a
+bounded, retryable UI error.
+
+## Midnight Mock Attestation API
+
+This is `giwa-midnight/attestation-api`, not Spring Boot. It binds only to
+`127.0.0.1:4000` and issues local mock attestations for the approved Midnight
+deployment.
+
+- `GET /health`
+- `GET /provider-info`
+- `POST /authorization-challenges`
+- `POST /attest`
+
+`POST /authorization-challenges` accepts the private mock financial tuple only
+from the local CLI-compatible participant (interactive CLI or trusted Proof
+Bridge), resolves the canonical GIWA Seller/Buyer wallet, and returns a
+two-minute EIP-712 authorization request. The browser-facing request contains a
+salted commitment instead of raw financial values. The random salt remains in
+Bridge/CLI and Provider memory.
+
+`POST /attest` requires the matching MetaMask authorization response. The
+Provider consumes the in-memory challenge once, re-reads the canonical GIWA
+wallet, recovers the EIP-712 signer, and only then creates its existing Schnorr
+attestation. Provider ID `2` identifies this authorization policy; Provider ID
+`1` results are legacy context-only results. Challenge expiry is transport-level
+replay protection and does not make a Midnight eligibility result current or
+unexpired.
+
+## Midnight Local Proof Bridge
+
+This is the trusted, local-only process in `giwa-midnight/cli`, not Spring Boot
+and not a production API. It binds only to `127.0.0.1:4200`. Development Vue
+reaches it through the same-origin `/midnight-proof` Vite proxy. It reuses the
+already-proven CLI Midnight wallet, encrypted contract private state, Provider 2
+flow, Proof Server, and current local contract. The Bridge therefore owns the
+Midnight transaction signer and balance; MetaMask signs only the GIWA
+Seller/Buyer EIP-712 authorization.
+
+All session identifiers stay in JSON bodies rather than URLs:
+
+- `POST /v1/proof-sessions/challenge`
+- `POST /v1/proof-sessions/prove`
+- `POST /v1/proof-sessions/status`
+- `POST /v1/proof-sessions/cancel`
+
+`POST /v1/proof-sessions/challenge` accepts exactly:
+
+```json
+{
+  "version": 1,
+  "onchainReceivableId": "1",
+  "subjectRole": "SELLER",
+  "annualRevenueKrw": "500000000",
+  "debtRatioBps": "20000",
+  "overdueCount": "1",
+  "secretPin": "1234"
+}
+```
+
+The Bridge prepares the existing private witness flow and returns HTTP 201 with
+exactly a cryptographically random `sessionId`, decimal-string `expiresAt`, and
+the existing exact `authorizationRequest`. Vue removes the raw financial fields
+and PIN from its form state immediately after this response. The request is then
+signed only after a separate, explicit MetaMask action.
+
+`POST /v1/proof-sessions/prove` accepts `{ version, sessionId, authorization }`
+and returns HTTP 202 with `{ version, sessionId, status }`. The Bridge consumes
+the one-shot session, obtains the mock Schnorr attestation, generates the proof,
+and submits the Midnight transaction asynchronously. It does not automatically
+retry an ambiguous submission.
+
+`POST /v1/proof-sessions/status` and
+`POST /v1/proof-sessions/cancel` accept exactly `{ version, sessionId }` and
+return HTTP 200 on success. Thus the exact successful status codes are 201 for
+challenge, 202 for prove, and 200 for status/cancel.
+Status is one of:
+
+- `awaiting_authorization`
+- `attesting`
+- `proving_and_submitting`
+- `indexing`
+- `complete`
+- `failed`
+- `expired`
+- `cancelled`
+
+A complete response contains the exact proof capability, not an independently
+trusted eligibility boolean. Vue submits that capability to the existing
+read-only `/midnight-api` resolver and displays only the independently decoded
+Indexer result. `complete` means the Midnight transaction finalized and the
+capability was preserved; it does not promise that the asynchronous Indexer is
+already caught up. After finalization, `indexing` is only the internal
+transition into `complete`; the Bridge does not issue a per-session Indexer
+query or hold the one-shot session open for public visibility. Vue retries only
+the independent resolver until the result is visible and must never submit
+another proof for that delay. A failed response contains only a stable
+`{ code, message }` error. Session status never returns the raw tuple, PIN,
+hidden salt, Provider signature, private state, wallet seed, or stack trace.
+
+The Bridge permits only one active prepared/running session because one local
+CLI encrypted state and wallet are shared. Sessions are memory-only, short-lived,
+one-shot, and not resumable after process restart. An internal timer expires an
+unsigned `awaiting_authorization` session exactly at its Provider deadline even
+if the browser sends no further request; this drops its prepared tuple and frees
+the active slot. Every terminal record, including a returned capability or safe
+error, is retained for 60 seconds and then removed by its own unref timer even
+when no later request arrives. CLI and Bridge use a common process lock so two processes
+cannot concurrently mutate the same encrypted
+LevelDB state. Cancellation removes a session that has not begun the
+non-abortable SDK proof/submission call; once that call is running, the Bridge
+keeps the lock and exposes status instead of pretending the transaction was
+cancelled.
+
+Before binding, the Bridge applies a 10-second deadline to one startup Indexer
+preflight, validates the pinned contract/Provider, and seals the GIWA
+configuration in memory. Challenge preparation uses only that cache and never
+queries the Indexer while raw inputs exist. Because the SDK exposes no abort
+signal, one timed-out startup query may remain internally pending; the server
+does not open and no raw proof tuple has been accepted.
+
+The HTTP boundary requires an exact allowlisted local `Origin`, an allowlisted
+local `Host`, `Sec-Fetch-Site: same-origin`, and the custom request header
+`X-GASOK-MIDNIGHT-UI: 1`. Its default development authorities are the
+`127.0.0.1:5173`/`localhost:5173` proxy and literal-loopback port 4200; there is
+no wildcard. It also requires `application/json`, no query string, identity
+content encoding, an exact request shape, a 4,096-byte body limit, and bounded
+header/request timeouts. It does not enable CORS, bind to a LAN address, reflect
+request values in errors, or log request bodies. Responses are `no-store`,
+`nosniff`, and `no-referrer`. This is a development trust boundary, not a safe
+remote or multi-user service.
 
 ---
 

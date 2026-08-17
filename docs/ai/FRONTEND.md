@@ -6,12 +6,99 @@ Vue 유지
 React 예제는 참고만 함
 CLI 성공 전 UI 연동 금지
 
-Phase 3A uses the authenticated, development-only `/midnight` route. It reads
-only CLI-created public results through `/midnight-api`; the dedicated service
-and composable must not import the Node CLI, wallet, Proof Server, attestation,
-or private-state code. Production keeps `VITE_MIDNIGHT_POC_ENABLED=false`.
-The page must say mock-attested, company/receivable-unbound, and not a Funding
-gate. Full browser proof submission waits for an approved local signer design.
+The authenticated, development-only `/midnight` route resolves exactly one
+CLI-created Proof capability through `/midnight-api`. The capability is bound to
+a GIWA receivable and Seller/Buyer role, but the result is not a Funding gate and
+does not establish legal-company identity, financial-data truth, bank
+verification, freshness, or current eligibility. Provider ID `1` is legacy
+role-context-only output; only Provider ID `2` may be described as having passed
+the Mock Provider's EIP-712 role-wallet authorization policy.
+
+The separate development-only `/midnight/authorize` route is a MetaMask signing
+tool for the Seller/Buyer actor. It accepts only the versioned EIP-712 request
+printed by the CLI, validates its fixed GIWA/Midnight/Provider context, selects
+the exact canonical role wallet, and returns a signature response for manual
+paste back into the CLI. Raw financial values, the hidden request salt, PIN,
+company secret, provider signature, and Midnight private state never enter Vue.
+The signing request and response stay in component memory and must not be put in
+browser storage, logs, URLs, Spring Boot, or MySQL.
+
+The development-only `/midnight/prove` route is the complete ADR-018 learning
+flow. It collects the caller-supplied mock financial tuple and PIN only in
+component memory, sends them once to the loopback `/midnight-proof` Bridge to
+create the Provider 2 challenge, and immediately clears those raw fields from
+the reactive form after the challenge response. A separate explicit button then
+opens MetaMask for the canonical GIWA role-wallet EIP-712 signature. The page
+polls the one-shot proof session and, when complete, passes the returned
+capability to the existing `/midnight-api` resolver. It displays the independently
+decoded Indexer result rather than trusting an eligibility value from the
+Bridge.
+
+The proof flow must not place raw values, PIN, authorization material, session
+ID, capability, or result in Pinia, browser storage, a URL, console output,
+telemetry, Spring Boot, or MySQL. It must not automatically open MetaMask,
+automatically retry an ambiguous submission, or claim perfect JavaScript memory
+zeroization. Unmount and overlapping-request guards must prevent a stale response
+from repopulating cleared state. Vue devtools are disabled whenever the raw-input
+proof route is enabled so reactive values are not exposed through inspection
+history.
+
+The existing Midnight read service remains independent from the Node CLI, Proof
+Server, attestation server, and private-state code. `/midnight/prove` calls only
+the narrow loopback Bridge service; the Bridge owns those dependencies and the
+Midnight development wallet. Production keeps
+`VITE_MIDNIGHT_POC_ENABLED=false` and
+`VITE_MIDNIGHT_PROOF_BRIDGE_ENABLED=false`, so all Midnight routes and lazy
+chunks are excluded. The proof route requires both development mode and its
+separate Bridge flag. React is not introduced.
+
+This custodial Bridge is selected to reuse the current proven CLI identity and
+state. It is not required by a Lace limitation: current official Midnight Local
+Dev supports Lace on `undeployed`. Direct Vue + Lace remains a possible later
+self-custody replacement after a separate identity/private-state migration ADR.
+
+When the proof flag is enabled, Vite uses strict literal-loopback port `5173`,
+adds the `/midnight-proof` proxy to `127.0.0.1:4200`, removes the development
+devtools plugin, and sets the Vue runtime devtools policy to false. When the
+proof flag is disabled, the port-4200 proxy is absent. Production excludes the
+proof route and lazy chunk rather than merely hiding a navigation link.
+
+Current verification confirms zero proof marker matches in the production
+artifact. A live development-browser Seller `#1` challenge reached the Bridge,
+after which all four private form values were absent from the DOM and captured
+console output. The in-app browser exposed no MetaMask provider, so this smoke
+stopped before signing and does not count as a full proof/transaction E2E.
+
+### `/midnight/prove` State and UX Contract
+
+The observable sequence is:
+
+`editing -> requesting challenge -> awaiting signature -> signing ->`
+`attesting/proving and submitting -> transitional indexing -> complete capability ->`
+`resolving public result ->`
+`success | failed | expired | cancelled | unknown`
+
+- Challenge creation does not open MetaMask automatically. It shows the exact
+  public receivable/role authorization meaning before the user explicitly signs.
+- The displayed countdown uses the Provider's decimal-string expiry and never
+  extends it locally. The Bridge independently expires and drops an unsigned
+  prepared tuple at that deadline even if the page stops polling. An expired
+  challenge requires a new session and new input.
+- Session polling sends `{ version, sessionId }` in a POST body. The session ID
+  is never added to route/query state.
+- `failed` shows only the Bridge's stable safe code/message. A timeout or unknown
+  browser result remains status-checkable; it never launches another proof.
+- `complete` is not final UI success until the returned capability resolves
+  through the existing read API and Indexer. An indexing delay remains retryable
+  only at the resolver step, without repeating proof submission. The Bridge may
+  return `complete` immediately after a finalized transaction without querying
+  the Indexer; preserving that capability is what makes resolver-only recovery
+  possible.
+- Cancelling before proof submission clears component references and asks the
+  Bridge to consume the session. A proof already executing in the non-abortable
+  SDK is shown as still running instead of falsely reported as cancelled.
+- All fields use semantic labels, status text is announced accessibly, buttons
+  expose loading/disabled states, and focus returns to actionable recovery.
 
 # Frontend
 
