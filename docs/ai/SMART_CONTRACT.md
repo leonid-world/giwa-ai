@@ -5,6 +5,42 @@ Midnight Compact contract
 
 # Smart Contract
 
+## Midnight Compact v2 (local PoC only)
+
+`giwa-midnight/contract/src/zkloan-credit-scorer.compact` is not a GIWA
+Solidity replacement. The current local evaluation version is `2` and accepts a
+public `FunderPolicyRequest` containing:
+
+```text
+requestId Bytes<32>
+intendedFunderWallet Bytes<20>
+minAnnualRevenueKrw Uint<64>
+maxDebtRatioBps Uint<32>
+maxOverdueCount Uint<16>
+validUntil Uint<64>
+```
+
+Compact recomputes a domain-separated policy-request hash and an opaque lookup
+bound to the request-scoped company commitment, exact GIWA
+chain/ReceivableFinance/receivable/role/wallet context, and Midnight deployment.
+The registered Provider Schnorr verifier and Provider signer use the same exact
+11-field order: three private facts, company/GIWA/deployment/policy hashes,
+Provider ID, evaluation version, `profileAsOf`, and `validUntil`.
+
+The circuit checks the private tuple against the exact thresholds and stores
+only the combined boolean, Provider ID, version, profile timestamp, and expiry.
+At `blockTime >= validUntil` it rejects. No raw fact, per-condition failure,
+nonce, signature, authorization, receivable ID, role, wallet, or policy value is
+published in the result map; those public context values travel in the bounded
+capability and are revalidated by the Read API.
+
+The live local v2 deployment is
+`12caaf76aef1de1c584b67462018810f6e4e7eb2535e136f560cb621e24a3f36`.
+Provider 2 registration transaction
+`006abe69d8ba934519e19c4490ce77be724f75aae1bcb4e6b4fcd720258aa10601`
+was included at local block `25714`. The former v1 deployment remains
+historical and is not migrated or used as fallback.
+
 ## Contracts
 
 `MockKRW.sol`

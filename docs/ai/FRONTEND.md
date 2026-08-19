@@ -6,13 +6,65 @@ Vue 유지
 React 예제는 참고만 함
 CLI 성공 전 UI 연동 금지
 
-The authenticated, development-only `/midnight` route resolves exactly one
-CLI-created Proof capability through `/midnight-api`. The capability is bound to
-a GIWA receivable and Seller/Buyer role, but the result is not a Funding gate and
-does not establish legal-company identity, financial-data truth, bank
-verification, freshness, or current eligibility. Provider ID `1` is legacy
-role-context-only output; only Provider ID `2` may be described as having passed
-the Mock Provider's EIP-712 role-wallet authorization policy.
+## Current v2 product UX
+
+The authenticated development-only `/midnight` route is the Funder request
+workspace. The Funder selects an unassigned `TOKENIZED` receivable, Seller
+and/or Buyer, minimum annual revenue, maximum debt ratio, maximum overdue
+count, and a validity duration. These are public evaluation **criteria**, not
+the Funder's guesses about the subject's facts. Selecting both roles creates two
+independent requests. The page explains every unit and always renders the
+result beside the exact criteria and subject.
+
+The authenticated `/midnight/prove` route is the Seller/Buyer assigned-request
+inbox. The subject reviews who requested the check, which receivable/role and
+wallet are bound, the criteria, and expiry; it may deny or enter its own
+caller-supplied mock financial facts. Those values live transiently in the Vue
+component, are sent only to the loopback Bridge, and are cleared immediately
+after challenge creation. The canonical role wallet signs the v2 EIP-712
+consent. No Funder signs for Seller/Buyer.
+
+There is no product JSON textarea, capability copy/paste, file handoff, or PIN.
+The Bridge creates an internal request-scoped random pseudonym nonce. On proof
+finalization Vue hands the capability directly to Spring `complete`; after
+Spring confirms `SUBMITTED` or the idempotent already-`COMPLETED` state, Vue
+ACKs the Bridge's encrypted outbox. If the page or Bridge restarts before that
+ACK, the same request is recovered by request ID and delivered without another
+signature or proof submission.
+
+The Funder sees request states, not a bare `eligible`: waiting, proof submitted
+while public indexing catches up, denied, expired, failed, or completed. A
+temporary resolver outage keeps `SUBMITTED` and retries. `DENIED`, `EXPIRED`,
+and `FAILED` are explicitly not “부적격”. A completed result is worded as
+“요청한 기준 충족/미충족” and includes Provider, mock profile timestamp, and
+validity deadline. It is not bank/accounting verification, GIWA Funding
+approval, or an automatic Funding gate.
+
+The same Funder cannot create another unexpired request for the same
+receivable/role. This reduces simple threshold probing, but the UI/backend still
+need fixed policy templates, query budgets/cooldowns, and audit UX before any
+remote multi-user release.
+
+## Historical v1 diagnostic UX
+
+The text below describes ADR-018 through ADR-020. These fixed-policy,
+clipboard/file, PIN, and manual authorization routes remain only at
+`/midnight/legacy/results`, `/midnight/legacy/prove`, and
+`/midnight/legacy/authorize` for learning/diagnostics. They are not a fallback
+for v2 product requests.
+
+The authenticated, development-only `/midnight` route is the Funder-side
+verifier. It first loads the existing authenticated receivable and Funding-
+opportunity DTOs, requires a Funder-visible DB receivable plus Seller/Buyer role,
+and then explicitly imports an intentionally shared Proof capability from the
+clipboard or a user-selected local file before resolving it through
+`/midnight-api`. Before resolution, the capability must match the selected
+record's synchronized onchain ID, approved ReceivableFinance address, role, and
+canonical party wallet. The result is not a Funding gate and does not establish
+legal-company identity, financial-data truth, bank verification, freshness, or
+current eligibility. Provider ID `1` is legacy role-context-only output; only
+Provider ID `2` may be described as having passed the Mock Provider's EIP-712
+role-wallet authorization policy.
 
 The separate development-only `/midnight/authorize` route is a MetaMask signing
 tool for the Seller/Buyer actor. It accepts only the versioned EIP-712 request
@@ -23,20 +75,48 @@ company secret, provider signature, and Midnight private state never enter Vue.
 The signing request and response stay in component memory and must not be put in
 browser storage, logs, URLs, Spring Boot, or MySQL.
 
-The development-only `/midnight/prove` route is the complete ADR-018 learning
-flow. It collects the caller-supplied mock financial tuple and PIN only in
-component memory, sends them once to the loopback `/midnight-proof` Bridge to
-create the Provider 2 challenge, and immediately clears those raw fields from
-the reactive form after the challenge response. A separate explicit button then
-opens MetaMask for the canonical GIWA role-wallet EIP-712 signature. The page
-polls the one-shot proof session and, when complete, passes the returned
-capability to the existing `/midnight-api` resolver. It displays the independently
-decoded Indexer result rather than trusting an eligibility value from the
-Bridge.
+This manual tool is retained only for CLI learning/diagnostics through direct
+dev-only URL access. The product-facing Funder verifier and Seller/Buyer proof
+page do not link to it, and the global navigation points only to the Funder
+result verifier. Normal Seller/Buyer issuance uses the integrated
+`/midnight/prove` signature step.
+
+The development-only `/midnight/prove` route is the Seller/Buyer issuer flow.
+It does not accept a manually typed receivable ID or role. It loads the current
+company's existing receivables, keeps only records whose positive synchronized
+onchain ID belongs to the approved ReceivableFinance deployment, and derives
+`SELLER` or `BUYER` from the authenticated company relationship. A route query
+contains only a public DB record ID used to prefer one already-visible record;
+it is never treated as an onchain ID. A Funder or unrelated company is blocked
+from issuance and directed to `/midnight` instead.
+
+The issuer flow collects the caller-supplied mock financial tuple and PIN only
+in component memory, sends them once to the loopback `/midnight-proof` Bridge
+to create the Provider 2 challenge, and immediately clears those raw fields
+from the reactive form after the challenge response. A separate explicit
+button then opens MetaMask for the selected role's canonical GIWA wallet. A
+Funder cannot substitute its own account for Seller/Buyer. The page polls the
+one-shot proof session and, when complete, passes the returned capability to
+the existing `/midnight-api` resolver. It displays the independently decoded
+Indexer result rather than trusting an eligibility value from the Bridge. Only
+after that resolution succeeds does it enable an explicit capability copy or
+local-file export for delivery to an intended Funder. The raw one-line JSON is
+available only as an advanced diagnostic representation.
+
+The first intended result for each receivable-role context is a new issuance and
+therefore needs a fresh challenge, Provider attestation, and ZK write. A
+different receivable or the opposite role cannot reuse that attestation. After
+issuance, verification is read-only: the same capability may be imported and
+resolved repeatedly without another proof. The UI must not equate repeated
+Funder verification with re-attestation.
 
 The proof flow must not place raw values, PIN, authorization material, session
 ID, capability, or result in Pinia, browser storage, a URL, console output,
-telemetry, Spring Boot, or MySQL. It must not automatically open MetaMask,
+telemetry, Spring Boot, or MySQL. ADR-020's explicit user-directed clipboard
+copy and local capability-file export are the only intentional handoff
+exceptions for the capability itself; they never include the raw tuple, PIN,
+secret, authorization material, or private state. The flow must not
+automatically open MetaMask,
 automatically retry an ambiguous submission, or claim perfect JavaScript memory
 zeroization. Unmount and overlapping-request guards must prevent a stale response
 from repopulating cleared state. Vue devtools are disabled whenever the raw-input
@@ -61,13 +141,97 @@ When the proof flag is enabled, Vite uses strict literal-loopback port `5173`,
 adds the `/midnight-proof` proxy to `127.0.0.1:4200`, removes the development
 devtools plugin, and sets the Vue runtime devtools policy to false. When the
 proof flag is disabled, the port-4200 proxy is absent. Production excludes the
-proof route and lazy chunk rather than merely hiding a navigation link.
+proof route registration, proof view/service lazy chunk, and proof API marker.
+The current Receivables component still leaves the dead route-name string
+`midnight-prove` in a production asset even though its dev-only CTA condition is
+always false. Complete compile-time elimination of that dead string remains a
+TODO and is not treated as a security boundary.
 
-Current verification confirms zero proof marker matches in the production
-artifact. A live development-browser Seller `#1` challenge reached the Bridge,
+A live development-browser Seller `#1` challenge reached the Bridge,
 after which all four private form values were absent from the DOM and captured
 console output. The in-app browser exposed no MetaMask provider, so this smoke
 stopped before signing and does not count as a full proof/transaction E2E.
+
+### Receivable identity and actor contract
+
+- `receivableId` is the Spring/MySQL record identifier used for list selection
+  and routes.
+- `onchainReceivableId` is the independent GIWA contract counter used by
+  `getReceivable`, Provider role resolution, the EIP-712 request, and Compact
+  binding. The UI never falls back from one ID to the other.
+- `tokenId` identifies the NFT created at tokenization and is displayed as a
+  third, separate value. It is not a receivable ID.
+- Seller/Buyer start issuance from the Receivables page. Their current company
+  relationship determines the role, and that role's registered wallet signs.
+- Funder opens `/midnight`, selects a TOKENIZED opportunity or a record already
+  assigned to it, selects which party result it received, and explicitly
+  imports the capability from the clipboard or a selected file. It does not
+  sign the Seller/Buyer issuance request.
+- Changing either record or role clears imported capability/result state and
+  aborts any pending resolver request. Leaving either proof page clears its
+  in-app working copy. It cannot erase an exported file, OS clipboard history,
+  filesystem backup, or synced-folder copy.
+- This actor-aware UI does not create independent Midnight identities. The
+  Bridge still shares one dev wallet, encrypted private state, and
+  `companySecret` across every Seller/Buyer selection. Reusing a PIN can make
+  capabilities correlatable through that shared secret. Independent company
+  participant state is still a TODO.
+
+### Proof capability handoff contract
+
+- Seller/Buyer must deliberately choose either clipboard copy or local-file
+  export after the capability has independently resolved. Neither action is
+  automatic.
+- Funder imports through an explicit clipboard action or a browser file picker.
+  File contents are parsed locally into component memory; the selected file is
+  not uploaded to Spring Boot or a new storage service. Import only validates
+  and stages the capability; it does not automatically query the result. The
+  user must explicitly select `ZK 결과 확인` afterward.
+- Export uses the identifier-free generic filename
+  `gasok-proof.gasok-proof`. File import accepts only `.gasok-proof` or `.json`,
+  requires non-empty valid UTF-8 content no larger than 16 KiB, and still runs
+  the exact version-1 capability/context parser before enabling verification.
+- Raw one-line capability JSON is an advanced learning/diagnostic path, not the
+  default product handoff. It has the same sensitivity and validation rules as
+  the file and clipboard forms.
+- The capability has no financial tuple, PIN, `companySecret`, hidden salt,
+  Provider signature, or Midnight private state, but it links an otherwise
+  opaque result to one public receivable role and is correlation-sensitive.
+- Copy/export UX must warn the issuer to use only the intended Funder, avoid
+  shared or auto-synced folders, and delete obsolete files. Import UX must warn
+  the Funder to clear or overwrite the clipboard and remove local copies when
+  no longer required.
+- Clearing Vue state does not clear OS clipboard history, filesystem backups,
+  sync history, or recoverable deleted files. Secure authenticated multi-user
+  delivery, recipient binding, revocation, and retention remain TODO.
+- There is still no automatic backend delivery, capability upload endpoint,
+  server persistence, URL/query transport, local/session storage, IndexedDB,
+  Pinia persistence, telemetry, or application logging.
+- A saved capability is intentionally reusable for repeated exact-result reads;
+  rechecking does not consume it. Because no listing or reconstruction endpoint
+  exists, the saved artifact is also the only supported recovery after issuer
+  component memory is cleared. Lost-capability recovery remains unsupported.
+
+### Private input UX contract
+
+- Annual revenue is entered as non-negative integer KRW. Grouping commas are
+  accepted for readability and removed before the Bridge request. The protocol
+  range is `Uint<64>`, not only values near the policy threshold.
+- Debt ratio is entered as percent with up to two decimal places. Vue converts
+  it exactly to basis points: `85.5% -> 8550 bps`, `200% -> 20000 bps`. The
+  protocol range is `Uint<32>` basis points.
+- Overdue count accepts the `Uint<16>` range `0..65535`.
+- The PIN accepts `0..65535` and combines with the encrypted local company
+  secret to derive a pseudonymous commitment. There is no correct PIN. It is
+  not a login, MetaMask, card, bank, or company password; the user should use a
+  disposable value or the cryptographically random temporary-PIN button.
+  Changing it after an exact-key duplicate creates another pseudonym/key; it
+  does not update, refresh, replace, or recover the earlier result and must not
+  be offered as a duplicate workaround.
+- Policy version 1 is a separate evaluation rule: annual revenue at least
+  500,000,000 KRW, debt ratio at most 200%, and overdue count at most 1. Inputs
+  outside those thresholds are allowed and produce a valid `eligible=false`
+  proof rather than a form-validation failure.
 
 ### `/midnight/prove` State and UX Contract
 
@@ -86,8 +250,12 @@ The observable sequence is:
   challenge requires a new session and new input.
 - Session polling sends `{ version, sessionId }` in a POST body. The session ID
   is never added to route/query state.
-- `failed` shows only the Bridge's stable safe code/message. A timeout or unknown
-  browser result remains status-checkable; it never launches another proof.
+- `failed` shows only the Bridge's stable safe code/message. The exact Compact
+  duplicate code `ELIGIBILITY_RESULT_ALREADY_EXISTS` tells the user to reuse the
+  previously saved capability and explicitly forbids trying another PIN. If the
+  artifact was lost, the current MVP reports that recovery is unsupported. A
+  timeout or unknown browser result remains status-checkable; it never launches
+  another proof.
 - `complete` is not final UI success until the returned capability resolves
   through the existing read API and Indexer. An indexing delay remains retryable
   only at the resolver step, without repeating proof submission. The Bridge may
@@ -99,6 +267,15 @@ The observable sequence is:
   SDK is shown as still running instead of falsely reported as cancelled.
 - All fields use semantic labels, status text is announced accessibly, buttons
   expose loading/disabled states, and focus returns to actionable recovery.
+
+The 2026-08-19 DB receivable `#4` Seller attempt exposed this duplicate
+condition. The UI correctly derived onchain receivable `#1`; the local services
+were healthy, but Compact found the exact lookup key already present. The Bridge
+running at 12:04 still returned generic `PROOF_FAILED`; logs and ledger state
+identified the cause afterward. The updated safe-code/UX path is covered by
+tests but has not yet run through a restarted live Bridge/MetaMask E2E. This is
+a stored-result identity conflict, not a 502 or a Docker, Provider, Proof Server,
+Node, or Bridge availability failure.
 
 # Frontend
 

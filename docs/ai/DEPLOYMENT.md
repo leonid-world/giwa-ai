@@ -1,5 +1,57 @@
 # Deployment
 
+## Current Midnight v2 Local Deployment
+
+Midnight remains local-only on network `undeployed`; it is not deployed to
+Preprod/Mainnet, Railway, or Vercel. The current v2 contract is:
+
+```text
+12caaf76aef1de1c584b67462018810f6e4e7eb2535e136f560cb621e24a3f36
+```
+
+Provider ID 2 was registered using the deterministic local development secret
+literal `PROVIDER_SECRET_KEY=2`. Registration transaction
+`006abe69d8ba934519e19c4490ce77be724f75aae1bcb4e6b4fcd720258aa10601`
+was included at local block `25714`; the public registry contained one Provider
+after verification. The old v1 contract is preserved. Do not remove/recreate
+Docker volumes or redeploy simply because an Indexer read is temporarily
+missing.
+
+Use [the local runbook](../../midnight/LOCAL_POC_RUNBOOK.md) as the executable
+source of truth. It starts five Midnight-facing terminals: Docker Node +
+Indexer + Proof Server, deterministic Mock Provider 2, Read API, Proof Bridge,
+and Vue. Spring Boot and MySQL are required in addition. The Bridge and CLI
+share the Midnight wallet/private-state database and must not run concurrently.
+
+Required secret/config boundaries:
+
+- Node/CLI/Bridge runtime stays on Node `22.21.1`.
+- `PROVIDER_SECRET_KEY=2` is a deterministic local test value only; never use it
+  on a network or asset with value.
+- `MIDNIGHT_STORAGE_PASSWORD` opens the encrypted Midnight private state and
+  derives the encrypted capability-outbox key. Keep it in an ignored local env
+  file and preserve it across Bridge restarts; losing/changing it makes the
+  outbox and private state unavailable.
+- Spring requires a separate externally supplied 32-byte
+  `MIDNIGHT_CAPABILITY_ENCRYPTION_KEY`. It is not stored in MySQL or Git.
+- Existing MySQL installs apply
+  `.codex/migrations/20260819_midnight_proof_requests.sql` once after backup and
+  only when the table is absent.
+
+Use `http://127.0.0.1:5173` consistently for the browser. The Bridge accepts
+both loopback names, but `localhost` and `127.0.0.1` are different browser
+origins/cookie scopes; Spring CORS must include the exact origin used by Vue.
+Switching names mid-session can look like an authentication/CORS failure.
+
+The current checks are Compact contract `39/39`, Mock Provider `87/87`, Read
+API `60/60`, CLI `156` passed plus `1` optional environment test skipped (12
+passing files plus 1 skipped file), Vue `141/141` across 21 files, and Spring
+full Gradle `86/86` including focused Midnight `19/19`. CLI typecheck/build,
+Vue lint/build, Spring `bootJar`, and deployment/registration preflight passed.
+A fresh end-to-end v2 browser run through MetaMask, Spring `SUBMITTED`, Bridge
+ACK, Funder resolve, and `COMPLETED` has not yet been recorded after the final
+outbox changes, so deployment readiness must not claim that live evidence yet.
+
 ## Current Status
 
 - Target network: GIWA Sepolia.
@@ -46,7 +98,7 @@
   were valid; owner tasks now retry state reads at the confirmed block and warn
   without treating an already confirmed transfer as failed.
 
-## Midnight Local-Only Proof Bridge
+## Historical v1: Midnight Local-Only Proof Bridge
 
 Midnight is not part of the Railway or Vercel deployment. Never add the Proof
 Bridge, Mock Attestation API, Proof Server, local Node/Indexer, Midnight wallet
@@ -64,6 +116,21 @@ The development stack uses these loopback-only processes:
 - trusted Proof Bridge `127.0.0.1:4200`
 - Vue development server on strict `127.0.0.1:5173`, with same-origin
   `/midnight-api` and a proof-flag-conditional `/midnight-proof` proxy
+
+Use `midnight/LOCAL_POC_RUNBOOK.md` for the five copy-paste terminals and actor
+test sequence. The existing Spring API/MySQL must also be reachable so Vue can
+load authenticated receivable context, but they are not new Midnight
+processes. Seller/Buyer start issuance from Receivables and sign with the
+derived role wallet; Funder uses `/midnight` only to verify a delivered
+capability. No user manually types an onchain ID in the current Vue flow.
+
+Capability copy/export/import needs no sixth service. It is an explicit local
+browser/OS handoff: Seller/Buyer copy to the clipboard or export a local file,
+and Funder imports from the clipboard or a selected file. The file is never
+uploaded to Spring or a delivery server. It is correlation-sensitive and may
+remain in clipboard history, backups, or synced folders, so use only the
+intended Funder, avoid shared/auto-synced locations, clear or overwrite the
+clipboard, and delete obsolete files. Raw JSON is for advanced diagnostics.
 
 Use Node 22.21.1 for the current Midnight CLI/Bridge runtime. Start
 Node/Indexer/Proof Server

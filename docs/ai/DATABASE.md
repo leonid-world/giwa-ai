@@ -1,5 +1,35 @@
 # Database
 
+## Current Midnight v2 Coordination Table
+
+`midnight_proof_requests` is local-PoC coordination state. It stores the random
+request ID, requester/subject companies and wallets, DB and synchronized GIWA
+receivable context, public Funder thresholds, `valid_until`, request status,
+and an encrypted proof-capability envelope. It never stores annual revenue,
+debt ratio, overdue count supplied by Seller/Buyer, pseudonym nonce, Provider
+signature, wallet authorization, company secret, or private witness.
+
+Statuses are `REQUESTED`, `SUBMITTED`, `DENIED`, `EXPIRED`, `COMPLETED`, and
+`FAILED`. `active_marker=1` enforces one active row for the same requesting
+Funder, receivable, and subject role. It remains active for `REQUESTED`,
+`SUBMITTED`, and `COMPLETED` until `valid_until`; denial, expiry, or permanent
+failure sets it to `NULL`. This limits trivial adaptive policy probing but is
+not a complete privacy budget.
+
+The capability columns are AES-256-GCM ciphertext, a 12-byte IV, an HMAC
+fingerprint for idempotency, and `encryption_key_version=1`. AAD binds the
+envelope to the request and actor/validity context. The 32-byte
+`MIDNIGHT_CAPABILITY_ENCRYPTION_KEY` is supplied outside MySQL. Do not rotate it
+while unexpired envelopes remain unless a versioned decrypt-and-reencrypt
+migration is implemented; otherwise existing rows become unreadable.
+
+Fresh installs use `.codex/schema.sql`. Existing local MySQL installs must be
+backed up and then apply
+`.codex/migrations/20260819_midnight_proof_requests.sql` exactly once only when
+the table is absent. Do not recreate the schema or rerun an ALTER blindly.
+Expiry and permanent invalid-capability handling purge the envelope columns;
+temporary Indexer lag retains them in `SUBMITTED` for a later resolve retry.
+
 ## Tables
 
 companies
@@ -26,6 +56,10 @@ blockchain_transactions
 
 온체인 Transaction
 
+midnight_proof_requests
+
+로컬 v2 Funder 정책 요청, actor binding, 상태, 암호화 capability envelope
+
 receivable_status_history
 
 상태 변경 이력
@@ -40,6 +74,10 @@ receivable_status_history
 - Amount = BigDecimal
 - Current schema onchain_receivable_id and token_id = BIGINT UNSIGNED
 - Java currently maps sequential onchain IDs to Long and serializes them as JSON strings
+- `receivables.receivable_id`, `onchain_receivable_id`, and `token_id` are three
+  independent identifiers. UI/API code must never fall back from a missing
+  onchain ID to the DB ID or assume equal numeric values. Provider GIWA lookup
+  and Midnight binding use only the synchronized `onchain_receivable_id`.
 - Arbitrary uint256 IDs would require a future schema/Java migration before use
 - TxHash 저장
 - `(contract_address, onchain_receivable_id)` is unique

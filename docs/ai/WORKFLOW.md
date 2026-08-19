@@ -1,5 +1,53 @@
 # WORKFLOW
 
+## Current Midnight v2 Product Flow
+
+```text
+Funder selects unassigned TOKENIZED receivable + SELLER/BUYER
+  -> Funder enters public criteria and validity (not subject facts)
+  -> Spring creates REQUESTED request with random requestId and exact audience
+  -> selected Seller/Buyer sees assigned request
+      -> deny => DENIED (not an ineligible result)
+      -> or enter own caller-supplied mock facts transiently
+      -> local Bridge creates request-bound challenge and internal nonce
+      -> canonical role wallet signs EIP-712 v2 consent
+      -> Provider 2 signs exact facts/context/policy/freshness
+      -> Proof Server generates proof
+      -> Midnight Node finalizes transaction
+      -> Bridge atomically stores encrypted capability in local outbox
+  -> Vue POSTs capability directly to Spring complete
+      -> Spring validates/binds/encrypts it and records SUBMITTED
+      -> only then Vue ACKs Bridge and removes recoverable outbox record
+  -> Funder resolves the request through Spring
+      -> Read API recomputes context/lookup and reads Indexer
+      -> temporary Indexer not-found: remain SUBMITTED and retry
+      -> valid result: COMPLETED with criteria satisfied/not satisfied
+      -> permanent invalid capability: FAILED + envelope purge + active release
+```
+
+The normal v2 workflow never asks a human to copy JSON or enter a PIN. If Vue
+or the Bridge restarts after finalization but before Spring delivery, it calls
+Bridge `recover` with the request ID and resumes the same delivery; it never
+signs or submits another proof. A completed request remains active until
+`validUntil` so the same Funder cannot immediately probe the same
+receivable/role with slightly different thresholds.
+
+The v2 MetaMask authorization is valid for at most 120 seconds and never beyond
+the Funder policy deadline: `expiresAt = min(issuedAt + 120, validUntil)`.
+Depending on the remaining policy lifetime, the displayed signing window is
+1..120 seconds; an already-expired policy cannot create a challenge.
+
+The result proves only that the local Mock Provider signed the submitted mock
+tuple and Compact evaluated the displayed criteria. It is not a bank/accounting
+check, GIWA Funding approval, or an automatic Funding transaction gate.
+
+## Historical v1 Diagnostic Flow
+
+Any later section describing a fixed policy, PIN, clipboard/file capability,
+or `/v1` endpoint is an ADR-008 through ADR-020 learning record only. Current
+product routes are `/midnight` for requested policies and `/midnight/prove` for
+assigned Seller/Buyer consent; legacy tools live under `/midnight/legacy/*`.
+
 ## GASOK Main Business Flow
 
 회원가입
@@ -42,7 +90,7 @@ Backend ReceivableRepaid + MockKRW Transfer RPC 검증
 ↓
 DB REPAID 동기화
 
-## GASOK Midnight PoC Flow
+## Historical v1: GASOK Midnight PoC Flow
 
 Midnight functionality is implemented only on the `gasok-midnight` branch.
 
@@ -58,10 +106,10 @@ Phase 2.5 proof creation is complete through the CLI: the Mock Provider resolves
 receivable `#1` and its canonical role wallets from GIWA RPC, then separate
 role-bound proofs produce separate opaque ledger keys. The inputs remain
 caller-supplied mock values and are not proven to belong to those wallets. The
-read side is also complete for the local PoC: an intended Funder can paste one
-intentionally shared Proof capability into the development-only Vue page, which
-requests an exact result from the pinned local adapter. This remains reference
-information, not a Funding gate.
+read side is also complete for the local PoC: an intended Funder can explicitly
+import one intentionally shared Proof capability from the clipboard or a local
+file in the development-only Vue page, which requests an exact result from the
+pinned local adapter. This remains reference information, not a Funding gate.
 
 ADR-017 code adds a separate Provider 2 issuance gate without moving proof
 submission into Vue. The CLI keeps the private values and hidden salt, hands a
@@ -70,7 +118,8 @@ signature JSON back, and then asks the Provider for its Schnorr attestation.
 Provider 1 results remain legacy. The actual Provider 2 registration,
 Seller MetaMask-signing handoff, and full CLI-submitted local Midnight runtime
 E2E have now completed. The manual `/midnight/authorize` route remains available
-for learning and diagnostics.
+for learning and diagnostics by direct dev URL only; product-facing verifier
+and prover pages do not link to it.
 
 ADR-018 adds the complete development-only Vue path without changing GIWA or
 Spring. `/midnight/prove` sends the private mock tuple once to a trusted
@@ -81,26 +130,54 @@ Midnight wallet/private state. The completed capability is then resolved through
 the independent read adapter and Indexer. This is a custodial local PoC, not a
 Funding gate or production wallet design.
 
-### Planned Integrated Business Flow
+Issuance and verification have different reuse rules. The first intended result
+for every receivable-role context requires a fresh challenge, Provider
+attestation, proof, and ledger write; a different receivable or the opposite
+role cannot reuse that attestation. After success, the exact capability may be
+resolved repeatedly by an intended Funder without a new proof. The two-minute
+challenge is issuance consent only, not result freshness.
 
-This is a future Phase 3 product flow, not current Phase 2.5 enforcement. The
-bound proof result does not authorize or block any GIWA funding action. Making
+### Historical v1 Local Actor Flow
+
+This actor separation is implemented in the local Vue PoC. The bound proof
+result still does not authorize or block any GIWA funding action. Making
 Midnight eligibility a GIWA funding gate requires separate approval and an
 architectural decision after browser proof submission and the remaining access
 controls are proven.
 
-The preserved Phase 3A read side accepts a manually pasted,
-correlation-sensitive Proof capability and calls
+The preserved Phase 3A read side accepts an explicitly imported,
+correlation-sensitive Proof capability from the clipboard or a selected local
+file and calls
 `POST /v1/eligibility-results/resolve`. The adapter is the sole authority for
 the pinned contract
 `7e3ea9d741ce0f5862db6f46d0ad720be2586cd7d0405ec77e4a0478aa50f4fb`;
 there is no Vue contract-address default and no anonymous GET result list. The
-page displays only the exact receivable number, Seller/Buyer role, canonical
-party wallet, eligibility, provider ID, and policy version. The new
-`/midnight/prove` route uses the same resolver after its Bridge session. Neither
-route affects Funding. Secure multi-user capability delivery and verifier access
-remain future work; the direct loopback response and manual paste are local
-learning-PoC handoffs only.
+page first selects a Funder-visible DB record and Seller/Buyer role, then
+requires the capability's synchronized onchain ID, approved contract, role, and
+canonical wallet to match. `/midnight/prove` is the separate Seller/Buyer
+issuer route: it selects an authenticated DB receivable, derives the onchain ID
+and role, and requires that role wallet to sign. Neither route affects Funding.
+Secure multi-user capability delivery and verifier access remain future work;
+the explicit copy/export and clipboard/file import are local learning-PoC
+handoffs only. The raw JSON form is reserved for advanced diagnostics. No
+capability upload endpoint, automatic backend delivery, or server persistence
+is introduced.
+
+The UI separates Seller/Buyer/Funder actions, but the Bridge still represents
+all issuers with one Midnight dev wallet, encrypted participant private state,
+and `companySecret`. The parties are not independent Midnight identities, and
+same-PIN capabilities may be cross-correlatable through that shared secret.
+Per-company private state remains future work.
+
+The 2026-08-19 DB `#4` Seller attempt correctly derived GIWA onchain `#1` but
+reached an already-present exact lookup key. The Bridge running at 12:04 emitted
+generic `PROOF_FAILED`; logs and ledger state diagnosed the exact duplicate
+afterward. Updated code now maps/tests
+`ELIGIBILITY_RESULT_ALREADY_EXISTS`, but has not yet run through a restarted
+live Bridge/MetaMask E2E. This was not a Docker, Provider, Proof Server, Node,
+Indexer, Bridge, or 502 failure. The correct workflow is to reuse the existing
+saved capability; another PIN is not a supported bypass. If the artifact was
+lost, the current MVP has no recovery path.
 
 회원가입
 ↓
@@ -111,55 +188,6 @@ MetaMask 연결
 기업-지갑 매핑
 ↓
 채권 등록
-↓
-Seller와 Buyer가 각자 자신의 역할에 대한 증명 흐름 실행
-↓
-Bridge가 HTTP 입력 전 10초 제한 startup Indexer preflight로 계약/Provider를 확인하고
-검증된 GIWA 설정을 memory에 seal함
-↓
-dev-only `/midnight/prove`가 비공개 mock 재무값과 PIN을 component memory에서 입력받음
-↓
-Vue가 loopback Proof Bridge에 challenge 생성을 1회 요청
-↓
-Bridge가 CLI-compatible encrypted private state와 Provider 2 challenge를 준비
-↓
-challenge 응답 즉시 Vue가 raw 재무값과 PIN을 reactive form에서 제거
-↓
-사용자가 별도 버튼을 눌러 canonical 역할 지갑을 MetaMask에서 명시적으로 서명
-↓
-Vue가 session ID와 authorization response를 Bridge에 전달
-↓
-GASOK Mock Attestation API가 GIWA RPC에서 채권과 역할 지갑 확인
-↓
-Mock Provider가 challenge를 1회 소비하고 commitment와 EOA signer를 검증
-↓
-검증 후 Provider 2가 재무정보와 채권 역할 컨텍스트에 Schnorr 서명
-↓
-Bridge가 각 역할의 Attested Financial Data를 encrypted private state의 witness로 준비
-↓
-Midnight Witness가 비공개 재무정보를 Compact Circuit에 전달
-↓
-Compact Circuit이 다음 항목 검증
-
-- 등록된 Attestation Provider의 서명인지 확인
-- 서명이 같은 GIWA 채권/역할/지갑 및 Midnight 배포용인지 확인
-- 연매출 기준 충족 여부 확인
-- 부채비율 기준 충족 여부 확인
-- 연체 건수 기준 충족 여부 확인
-  ↓
-  Midnight Proof Server가 ZK Proof 생성
-  ↓
-  Midnight Local Node가 Proof 검증
-  ↓
-  검증 성공 시 Funding Eligibility 결과를 Midnight Ledger에 기록
-  ↓
-  Bridge가 finalized proof capability를 보존하고 완료 session에 반환
-  (per-session Indexer 조회는 하지 않음)
-  ↓
-  Vue가 read API에 capability를 제출하고 opaque lookup key로 Indexer 결과 재조회
-  (지연 시 이 resolver 조회만 재시도)
-  ↓
-  독립 조회가 성공한 뒤 GASOK Frontend에서 Midnight Verification 상태 표시
   ↓
   Buyer 채권 내용 검토
   ↓
@@ -169,9 +197,29 @@ Compact Circuit이 다음 항목 검증
   ↓
   토큰화
   ↓
+  Seller/Buyer가 매출채권 화면에서 자신의 DB 채권을 선택
+  ↓
+  Vue가 동기화된 온체인 ID와 현재 회사의 Seller/Buyer 역할을 자동 파생
+  ↓
+  각 역할 당사자가 `/midnight/prove`에서 비공개 mock 재무값과 임시 PIN 입력
+  ↓
+  Bridge가 Provider 2 challenge를 준비하고 Vue가 raw 입력을 즉시 제거
+  ↓
+  Seller 또는 Buyer canonical 역할 지갑이 MetaMask EIP-712 서명
+  (Funder가 대신 서명하지 않음)
+  ↓
+  Mock Provider attestation → Proof Server ZK proof → Midnight Node 검증/기록
+  ↓
+  Vue가 capability로 Read API/Indexer 결과를 독립 재조회
+  ↓
+  Seller/Buyer가 상관관계 민감 capability를 명시적으로 클립보드에 복사하거나
+  로컬 파일로 내보내 의도한 Funder에게 전달
+  ↓
   제3자 Funder가 TOKENIZED 채권 선택
   ↓
-  Funder가 Midnight Verification 결과 확인
+  Funder가 `/midnight`에서 같은 DB 채권과 Seller/Buyer 역할을 선택하고
+  클립보드/파일 capability를 명시적으로 가져와 문맥 일치/결과를 확인
+  (같은 capability 재조회에는 새 attestation/proof가 필요하지 않음)
   ↓
   별도 승인 전에는 참고 정보로만 표시하고 Funding gate로 사용하지 않음
   ↓
@@ -195,7 +243,7 @@ Compact Circuit이 다음 항목 검증
   ↓
   DB REPAID 동기화
 
-## Midnight PoC Development Workflow
+## Historical v1: Midnight PoC Development Workflow
 
 Midnight development must follow the order below.
 
@@ -237,10 +285,10 @@ Do not skip directly to frontend integration.
     self-custody as separate later architectures. Current official local Lace
     support means this is a product/identity migration choice, not a platform
     blocker.
-15. Integrate Spring Boot only if backend coordination is required by the proven
-    browser flow.
+15. Keep Spring limited to the existing authenticated receivable reads unless
+    further backend proof coordination is required by the proven browser flow.
 
-## Midnight Verification Rules
+## Historical v1: Midnight Verification Rules
 
 The initial PoC may use rules such as:
 
@@ -249,6 +297,25 @@ The initial PoC may use rules such as:
 - overdueCount <= 1
 
 These values are private inputs.
+
+The browser form keeps protocol ranges separate from those policy thresholds:
+
+- annual revenue: integer KRW in `Uint<64>`; display commas are accepted and
+  removed before the Bridge request
+- debt ratio: human percentage with up to two decimal places, converted exactly
+  to `Uint<32>` basis points (`85.5% = 8550`, `200% = 20000`)
+- overdue count: `Uint<16>` in `0..65535`
+- pseudonym PIN: disposable `Uint<16>` in `0..65535`; not a login, wallet,
+  bank, card, or company password and not a proof of company identity
+
+The PIN is not a refresh counter. Compact rejects only an already-present exact
+lookup key, so changing the PIN can create another unordered pseudonym/result
+for the same receivable-role. The product UX must instead map
+`ELIGIBILITY_RESULT_ALREADY_EXISTS` to existing-capability reuse. Lost
+capability recovery is unsupported in the current MVP.
+
+An input outside the three policy thresholds remains valid and produces a
+valid `eligible=false` proof. It is not rejected merely for being ineligible.
 
 Raw financial values must not be written to:
 
@@ -275,7 +342,12 @@ maximum funding ratios, legal-company identity, issued/freshness/latest/expiry
 semantics, refresh rounds, and Funding enforcement remain deferred until their
 policies are approved.
 
-## Trust Boundary
+A future reusable company-wide attestation would require a separate ADR for a
+time-bounded/revocable company credential and fresh per-receivable-role ZK
+presentations/nullifiers. It must preserve cross-receivable/role replay
+protection rather than removing the current signed binding.
+
+## Historical v1: Trust Boundary
 
 The GASOK Attestation API is a mock provider for local demonstration purposes.
 
@@ -315,7 +387,7 @@ not prove that the inputs belong to that wallet, real-world financial truth,
 legal-company identity, bank/accounting provenance, current eligibility, or
 Funding approval.
 
-## Local Development Rules
+## Historical v1: Local Development Rules
 
 Use only the local Midnight `undeployed` network.
 
@@ -339,7 +411,7 @@ The official Midnight React examples may be used only as implementation referenc
 
 Do not modify existing GIWA Solidity contracts unless Midnight integration explicitly requires it.
 
-## Phase Completion Criteria
+## Historical v1: Phase Completion Criteria
 
 ### Phase 1 — Official Midnight Example
 
@@ -400,9 +472,10 @@ Do not modify existing GIWA Solidity contracts unless Midnight integration expli
 - [x] Existing Vue project structure is preserved.
 - [x] React dependencies are not introduced.
 - [x] Midnight code is isolated in dedicated services or composables.
-- [x] A dev-only `/midnight` page resolves one manually pasted Proof capability
-  through the localhost-only adapter without wallet, proof, or private-state
-  access.
+- [x] A dev-only `/midnight` page resolves one explicitly imported Proof
+  capability through the localhost-only adapter without wallet, proof, or
+  private-state access, after matching it to an authenticated Funder-visible DB
+  record and selected Seller/Buyer role.
 - [x] The adapter pins the approved Phase 2.5 contract and exposes only exact
   `POST /v1/eligibility-results/resolve`; anonymous result enumeration is absent.
 - [x] The page distinguishes Provider 2 wallet-authorized issuance from Provider
@@ -444,18 +517,23 @@ Do not modify existing GIWA Solidity contracts unless Midnight integration expli
   private inputs, immediate post-challenge clearing, explicit MetaMask action,
   status polling, no automatic submission retry, and independent read-API
   resolution of the returned capability.
-- [x] Run the focused Vue proof-flow checks on Node 24.19.0: 8 files / 36 tests,
-  changed-file ESLint/Oxlint/Prettier, the production Vite build, and a high-
+- [x] Run the Vue checks on Node 24.19.0: 14 files / 103 tests, full
+  ESLint/Oxlint, changed-file Prettier, the production Vite build, and a high-
   severity npm audit with zero findings. These do not complete
   the broader legacy capability/authorization test item above.
-- [x] Confirm the production artifact has zero proof marker matches and run a
-  live Seller `#1` Vue → Bridge challenge smoke; after challenge creation all
+- [x] Confirm the production artifact excludes the proof route registration,
+  proof view/service chunk, and proof API marker, then run a live Seller `#1`
+  Vue → Bridge challenge smoke; after challenge creation all
   four private values were absent from DOM/captured console output.
+- [ ] Remove the dead `midnight-prove` route-name string still present in the
+  production Receivables asset if complete compile-time elimination is desired;
+  the disabled CTA string is not a security boundary.
 - [ ] Repeat the live browser path with MetaMask. The in-app browser lacked a
   provider, so signing, proof submission, transaction, and resolution were not
   exercised by that smoke.
-- [x] On Node 22.21.1, verify 20 files / 242 tests passed with 1 optional
-  environment file/test skipped, plus CLI typecheck/build, diff-check, and a
+- [x] On Node 22.21.1, verify 125 CLI tests passed with 1 optional environment
+  test skipped, plus CLI typecheck/build, 74/74 Attestation tests and build,
+  diff-check, and a
   high-severity npm audit with zero findings after the locked Restify transitive
   overrides.
 - [ ] Run a real Seller and Buyer browser-triggered local Bridge E2E before
@@ -465,8 +543,9 @@ Do not modify existing GIWA Solidity contracts unless Midnight integration expli
 - [ ] Consider direct Vue + Lace only as a separately approved self-custody
   replacement with participant/private-state migration.
 
-ADR-017 verification includes the complete Attestation API suite `72/72`, CLI
-`60` with `1` optional environment E2E skipped, Vue lint/build checks, and the
+ADR-017/019 verification includes the complete Attestation API suite `74/74`,
+CLI `125` with `1` optional environment E2E skipped, Vue 14 files / 103 tests,
+full ESLint/Oxlint, changed-file Prettier, production build, and the
 separate live Seller Provider 2 MetaMask-to-Midnight transaction at block
 `2854`. This proves the local CLI-submitted flow, not browser proof submission,
 financial-data truth, or a Funding gate.

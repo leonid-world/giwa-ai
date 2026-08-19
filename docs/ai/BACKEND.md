@@ -2,8 +2,45 @@
 
 ## Midnight
 
-초기 PoC에서 Spring Boot는 Attestation Provider가 아님
-Mock Attestation API는 giwa-midnight/attestation-api에서 별도 실행
+현재 v2 제품 흐름에서 Spring Boot는 인증된 **검증 요청 coordinator**다.
+Funder가 입력한 공개 기준과 대상 채권/역할을 `REQUESTED`로 저장하고,
+Seller/Buyer가 만든 v2 capability를 AES-256-GCM envelope로 암호화해
+`SUBMITTED`로 보관하며, Funder의 resolve가 성공하면 `COMPLETED`로 바꾼다.
+Spring은 Attestation Provider나 Proof Server가 아니며 재무 원문, nonce,
+Provider signature, EIP-712 응답, witness를 저장하지 않는다. Mock
+Attestation API는 계속 `giwa-midnight/attestation-api`에서 별도 실행된다.
+
+정상 상태 흐름은 `REQUESTED -> SUBMITTED -> COMPLETED`다. 당사자 거절,
+기한 만료, 영구 오류는 각각 `DENIED`, `EXPIRED`, `FAILED`다. Midnight
+트랜잭션 직후 Indexer가 아직 결과를 색인하지 않은 경우는 영구 오류가
+아니므로 `SUBMITTED`를 유지하고 재시도한다. 반대로 Read API가 capability
+위변조/문맥 불일치를 확정하면 `FAILED`로 전이하고 encrypted envelope를
+삭제하며 active marker를 해제한다.
+
+`MIDNIGHT_CAPABILITY_ENCRYPTION_KEY`는 MySQL 밖에서 주입하는 32-byte
+hex/base64 키다. 기존 암호문이 남아 있는 동안 이 키를 즉시 교체하면 복호화할
+수 없으므로, key version별 복호화와 재암호화 migration 또는 모든 활성 요청의
+drain/expiry 없이 회전하지 않는다. 현재 key version은 `1`이다.
+
+동일 Funder·채권·역할의 유효 요청은 하나만 허용한다. 성공한 요청도
+`validUntil`까지 active로 유지해 기준을 조금씩 바꾸는 adaptive query를 줄인다.
+이는 완전한 방어가 아니며 정책 template, query budget/cooldown, audit가 TODO다.
+
+결과는 “Mock Provider가 서명한 caller-supplied 값이 Funder의 공개 기준을
+충족했는가”일 뿐 은행/회계기관 검증, GIWA 펀딩 승인, 자동 Funding gate가 아니다.
+
+### Historical v1 diagnostic behavior
+
+ADR-019의 Vue 흐름은 기존 인증된 `GET /receivables`와
+`GET /receivables/funding-opportunities`를 DB 채권 ID → 동기화된 GIWA
+온체인 ID/역할 문맥으로 파생하는 데만 재사용한다. 새 Midnight API나
+스키마를 추가하지 않으며, 재무 원문, PIN, 세션, 서명, capability를
+Spring/MySQL에 저장하지 않는다. ADR-020의 capability 클립보드 복사와 로컬
+파일 내보내기/가져오기는 사용자 브라우저와 OS 안에서만 일어나며, 파일을
+Spring으로 업로드하거나 발급자에서 Funder로 자동 전달하는 endpoint는 없다.
+선택한 파일 내용은 Vue component memory에서만 파싱되고 기존 loopback Read
+API로 exact capability가 전달될 뿐이다. 안전한 다중 사용자 전달과 보존 정책은
+여전히 별도 TODO다.
 
 # Backend
 

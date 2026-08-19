@@ -1,6 +1,61 @@
 # Architecture
 
-## Network Boundary
+## Current Midnight v2 Request-Bound Architecture
+
+```text
+Funder Vue /midnight
+  -> Spring POST proof request (public criteria + authenticated audience)
+  -> MySQL REQUESTED row
+  -> Seller/Buyer Vue /midnight/prove
+       -> private mock facts held transiently in component memory
+       -> loopback Proof Bridge :4200
+          -> Mock Provider 2 :4000 (role-wallet consent + mock attestation)
+          -> Proof Server :6300 (ZK proof computation)
+          -> Midnight Node :9944 (validation/finalization)
+          -> encrypted local capability outbox (delivery durability)
+       -> Spring complete (AES-256-GCM encrypted capability envelope)
+       -> Bridge ACK after Spring reports SUBMITTED/idempotent COMPLETED
+  -> Funder Spring resolve
+       -> local Read API :4100 -> Indexer :8088
+       -> COMPLETED sanitized policy result
+```
+
+The Funder owns the public policy request: request ID, intended Funder wallet,
+minimum annual revenue, maximum debt ratio, maximum overdue count, and
+`validUntil`. The Seller/Buyer owns the private mock facts and decides whether
+to deny or authorize. Compact evaluation version 2 binds the policy hash,
+audience, GIWA receivable/role/wallet, company commitment, deployment,
+Provider, profile timestamp, and deadline. Only one combined boolean and
+freshness metadata become public; individual comparisons and raw values do
+not.
+
+Spring is a coordinator and encrypted bearer-capability custodian, not a proof
+generator or financial-data source. It stores no raw facts, nonce, Provider
+signature, authorization, or witness. The Bridge is not a generic reverse
+proxy: it owns the local Midnight wallet/private-state flow, Provider exchange,
+proof transaction, crash-safe encrypted outbox, recovery, and delivery ACK.
+The Read API is separately read-only so Indexer lag can be retried without
+replaying a proof transaction.
+
+The active-request uniqueness marker allows only one unexpired request per
+requesting Funder, receivable, and subject role. It remains active through a
+successful result's validity window to limit trivial adaptive yes/no probing;
+denial, expiry, and permanent failure release it. This is only a PoC
+mitigation. Policy templates, query budgets/cooldowns, audit controls, and
+independent per-company Midnight identities remain required before any remote
+multi-user use.
+
+The result is informational. It is neither bank/accounting verification nor a
+GIWA funding approval or automatic lifecycle gate. GIWA Solidity continues to
+own tokenization, funding, repayment, and asset transfers.
+
+## Historical v1 Boundary (ADR-018 through ADR-020)
+
+The diagram and flow below record the former fixed-policy, PIN, manual
+clipboard/file capability PoC. Those routes remain under `/midnight/legacy/*`
+for diagnostics only and have no v2 fallback.
+
+## Historical v1: Network Boundary
 
 GIWA and Midnight are separate networks with separate responsibilities. The
 Midnight PoC is local-only on `undeployed`; GIWA remains the existing testnet
@@ -10,7 +65,8 @@ integration. No Midnight deployment reaches Preprod or Mainnet.
 GASOK Vue (existing giwa-ui)
   ├─ Existing GIWA lifecycle UI ──────────────────────────────┐
   └─ Dev-only Midnight tools                                   │
-     ├─ /midnight/prove ── raw input, explicit MetaMask EIP-712│
+     ├─ /midnight/prove ── DB record → onchain ID/role derivation │
+     │                      raw input, role-wallet EIP-712       │
      │                         │                                 │
      │                         ▼                                 │
      │   Proof Bridge (127.0.0.1:4200, trusted local process)   │
@@ -18,10 +74,12 @@ GASOK Vue (existing giwa-ui)
      │     ├─ Mock Provider 2 attestation                       │
      │     └─ proof generation + transaction submission        │
      ├─ /midnight/authorize ← preserved manual CLI handoff      │
-     └─ /midnight verifier ── capability ────────────────┐      │
+     ├─ explicit copy/export → OS clipboard/local file          │
+     └─ /midnight verifier ← explicit clipboard/file import ─┐      │
                                                            │      │
 GASOK Spring Boot (existing giwa-api)                      │      │
-  ├─ auth / business logic / MySQL                          │      │
+  ├─ auth / existing public receivable reads                │      │
+  ├─ business logic / MySQL                                  │      │
   └─ GIWA RPC verification and transaction journal          │      │
                                                            │      │
 GIWA Sepolia                                               │      │
@@ -37,12 +95,12 @@ Midnight PoC (giwa-midnight, local-only) ◀────────────
   └─ Read-only API (127.0.0.1:4100) → exact capability resolver
 ```
 
-## Component Ownership
+## Historical v1: Component Ownership
 
 | Component | Owns | Must not own |
 | --- | --- | --- |
-| Vue | Dev-only `/midnight/prove` form, transient raw input/PIN memory until challenge creation, explicit canonical-role MetaMask EIP-712 signing, proof-session polling, and independent capability resolution; preserved manual `/midnight` and `/midnight/authorize` tools | raw-input persistence or logging, hidden salt, Midnight wallet/private-key custody, direct private-state access, direct Proof Server/Node calls, Funding enforcement, GIWA architecture changes |
-| Spring Boot | authentication, MySQL, REST API, GIWA receipt/event verification and journal | Attestation-provider signing in the initial PoC, Midnight transaction signing |
+| Vue | Authenticated public receivable selection; strict DB-ID/onchain-ID display and conversion; Seller/Buyer role derivation for `/midnight/prove`; transient raw input/PIN memory until challenge creation; explicit canonical-role MetaMask EIP-712 signing; proof-session polling; user-directed capability copy/local-file export; Funder clipboard/file import; DB/role context matching and independent capability resolution; preserved manual `/midnight/authorize` tool | accepting a manually invented onchain ID or role, allowing a Funder to sign for Seller/Buyer, silent capability delivery/upload, browser-storage/Pinia/URL/log persistence, hidden salt, Midnight wallet/private-key custody, direct private-state access, direct Proof Server/Node calls, Funding enforcement, GIWA architecture changes |
+| Spring Boot | authentication, MySQL, existing public receivable/funding-opportunity reads used to establish UI context, GIWA receipt/event verification and journal | raw financial input, PIN, proof session/capability upload or persistence, Attestation-provider signing in the initial PoC, Midnight transaction signing |
 | GIWA contracts | receivable ownership, tokenization, funding, repayment, current-NFT-owner settlement | financial eligibility proof or private financial data |
 | Midnight contract | sealed GIWA deployment configuration, eight-field provider-signature verification, private eligibility proof, one-shot opaque-key result | raw financial values, GIWA assets, GIWA lifecycle state, independent GIWA RPC reads |
 | Attestation API | canonical Seller/Buyer role-context resolution from GIWA RPC; bounded two-minute one-shot EIP-712 challenges, EOA signer recovery, and Provider 2 mock financial-input/context signing | bank/accounting-provider claim, legal-company identity proof, financial-data truth, MySQL persistence |
@@ -52,7 +110,7 @@ Midnight PoC (giwa-midnight, local-only) ◀────────────
 | Indexer | query of public Midnight result | private witness/state query |
 | Read-only Midnight API | one pinned Midnight deployment, exact `POST /v1/eligibility-results/resolve`, capability/key recomputation, local Indexer lookup, and generated Compact-ledger decoding for Vue | anonymous result listing, wallet, proof, attestation, mutation, Spring/MySQL responsibilities, or verifier authentication |
 
-## Data Classification
+## Historical v1: Data Classification
 
 | Data | Location |
 | --- | --- |
@@ -60,11 +118,30 @@ Midnight PoC (giwa-midnight, local-only) ◀────────────
 | EIP-712 authorization request and response | direct `/midnight/prove` sessions keep them in component/Bridge memory; the preserved `/midnight/authorize` tool still supports manual CLI copy/paste. Both forms contain a salted request commitment rather than raw financial values or the hidden salt |
 | Midnight wallet mnemonic/seed | interactive CLI mnemonics are supplied locally or shown once and never logged; ADR-018 reuses the public disposable Local Dev genesis seed already used by the standalone flow and must never use it on a network or asset with value |
 | contract admin, registered Provider public keys, sealed GIWA chain/address, opaque receivable-eligibility lookup key, provider ID, policy version, eligibility | Midnight public state and Indexer |
-| company commitment plus GIWA receivable ID/role/wallet and lookup key | CLI/Bridge proof capability; not raw financial data, but correlation-sensitive; transiently pasted or returned to Vue and POSTed to the local adapter without browser-storage, log, or URL persistence |
+| company commitment plus GIWA receivable ID/role/wallet and lookup key | CLI/Bridge proof capability; not raw financial data, but correlation-sensitive. Vue keeps its working copy in component memory, while an explicit user action may copy it to the OS clipboard or export it to a local file; a Funder explicitly imports either artifact before Vue POSTs it to the local adapter. No browser-storage, Pinia, URL, server, telemetry, or log persistence is added |
 | Proof-session ID and state | cryptographically random, memory-only Bridge record; sent only in request bodies, one-shot, short-lived, and automatically discarded by a 60-second terminal timer or process restart |
 | account/company identity, receivable lifecycle, GIWA transaction proof summaries | existing Spring Boot/MySQL and GIWA chain according to existing rules |
+| DB receivable ID, synchronized onchain receivable ID, NFT token ID, Seller/Buyer/Funder relationship | existing Spring Boot DTO and Vue display/context selection. The DB ID remains an application identifier; only the synchronized onchain ID enters GIWA RPC and the Midnight binding |
 
-## Phase 2.5 Receivable-Subject Binding
+The current Bridge uses one Midnight development wallet, one encrypted
+participant private state, and one `companySecret` for every UI-selected Seller
+and Buyer. The authenticated GIWA actors and role-wallet authorizations are
+separate, but their Midnight participant identity is not. Same-PIN commitments
+are derived from the same Bridge secret and capabilities can therefore enable
+cross-context correlation. Independent per-company private state remains a
+required later architecture, not a property of ADR-019.
+
+The ADR-020 handoff deliberately crosses Vue's memory boundary only through a
+user gesture. Clipboard history and an exported local file can remain after the
+page is reset or closed, and may be copied by OS backup or folder-sync tools.
+They must therefore be treated as correlation-sensitive artifacts, delivered
+only to the intended Funder, removed when no longer needed, and never confused
+with a securely addressed multi-user channel. Vue can clear only its own
+working copy; it cannot prove erasure from the clipboard, filesystem, backup,
+or sync history. Raw one-line JSON is an advanced diagnostic representation of
+the same capability, not the primary handoff UX.
+
+## Historical v1: Phase 2.5 Receivable-Subject Binding
 
 The local Compact deployment is fixed to GIWA chain `91342` and
 ReceivableFinance `0x0f264334f98BA0d22f7Fc6Bb901a5Fa36158a315`. For each
@@ -90,11 +167,37 @@ therefore have different lookup keys even for the same receivable; their result
 values depend on the caller-supplied mock inputs and may be equal or different.
 An existing key is rejected, so the exact same proof context is one-shot.
 
+The current MVP therefore creates a fresh Provider 2 challenge, attestation,
+proof, and ledger write for the first intended result of each receivable-role
+pair. A different receivable or the opposite role cannot reuse the old
+attestation because the signed binding changes. Once that result exists, the
+proof capability is a reusable exact-read artifact: one or more intended
+Funders may resolve it again without another proof. The two-minute Provider
+challenge limits issuance consent only and does not make the stored result
+fresh or unexpired.
+
+Contract one-shot enforcement is narrower than the UX policy: it rejects an
+exact lookup key, not every possible result for a receivable-role pair. Since
+the PIN contributes to the company commitment, changing it creates a different
+pseudonym and key that can coexist with the old result. The UI must not offer
+PIN rotation as duplicate recovery, replacement, or refresh. It directs the
+issuer to the existing capability instead; if that capability was not retained,
+recovery is intentionally unsupported in this MVP.
+
 After submission, the CLI prints a proof capability containing the lookup data
 needed to correlate that opaque Midnight entry with one GIWA receivable party.
 The capability contains no PIN, company secret, raw financial value, or provider
 signature, but possession reveals that correlation and must be treated as
 privacy-sensitive.
+
+The 2026-08-19 DB receivable `#4` Seller failure is a concrete example of this
+boundary. Vue correctly derived onchain receivable `#1`; Node, Indexer, Provider,
+Proof Server, and Bridge were available, but Compact found the exact lookup key
+already present. The then-running Bridge returned generic `PROOF_FAILED`; logs
+and ledger state identified the exact duplicate afterward. The updated Bridge
+now maps and tests it as `ELIGIBILITY_RESULT_ALREADY_EXISTS`, and Vue instructs
+capability reuse rather than infrastructure restart or a different PIN. A live
+restart/MetaMask E2E of that new mapping remains outstanding.
 
 The read-only adapter is the sole configured Midnight-address authority and is
 pinned to
@@ -103,11 +206,15 @@ It accepts only the exact version-1 capability object at
 `POST /v1/eligibility-results/resolve`, recomputes the binding, deployment, and
 lookup key, and reads that single map entry. The former anonymous
 `GET .../eligibility-results` list is no longer exposed. The dev-only Vue page
-pastes the capability through the same-origin `/midnight-api` proxy and shows
-the exact receivable ID, Seller/Buyer role, canonical party wallet, eligibility,
-provider ID, and policy version.
+first selects an authenticated Funder-visible DB receivable and Seller/Buyer
+role. It then explicitly imports a capability from the clipboard or a selected
+local file, requires its onchain ID,
+ReceivableFinance address, role, and canonical party wallet to match that
+selected context before calling the same-origin `/midnight-api` proxy, and
+shows the DB ID, onchain ID, role, wallet, eligibility, provider ID, and policy
+version.
 
-## ADR-017 Provider 2 Issuance Authorization
+## Historical v1: ADR-017 Provider 2 Issuance Authorization
 
 Provider ID `2` is reserved for the EIP-712-authorized mock issuance policy.
 The CLI keeps the private financial tuple and hidden random salt, asks the local
@@ -132,7 +239,7 @@ signature and private policy execution; Midnight does not independently verify
 the secp256k1 EIP-712 signature. Provider ID `1` entries remain honest legacy
 role-context-only results and must not be described as wallet-authorized.
 
-## ADR-018 Local Vue Proof Bridge
+## Historical v1: ADR-018 Local Vue Proof Bridge
 
 The approved Phase 3B path adds a trusted Node.js Proof Bridge inside the
 `giwa-midnight/cli` workspace and a development-only Vue `/midnight/prove`
@@ -180,20 +287,22 @@ signal, so one timed-out startup query may remain internally unresolved; the
 server stays closed and no raw tuple has been accepted in that condition.
 
 This decision preserves the existing `/midnight` capability verifier and
-`/midnight/authorize` manual learning tool. It does not add Spring Boot, MySQL,
-a GIWA Funding gate, React, Preprod, or Mainnet. A later move to direct Lace
+`/midnight/authorize` manual learning tool. It adds no Spring Boot endpoint,
+MySQL proof persistence, GIWA Funding gate, React, Preprod, or Mainnet. ADR-019
+later reuses only existing authenticated receivable reads for UI context. A
+later move to direct Lace
 self-custody would require a separate ADR covering identity/state migration and
 would replace, not silently coexist with, the custodial Bridge architecture.
 
-## Integration Sequence
+## Historical v1: Integration Sequence
 
 1. `giwa-midnight` CLI proves the official ZK Loan example locally.
 2. The same CLI proves the GASOK financial-eligibility contract.
 3. Phase 2.5 binds separate Seller and Buyer proofs to a canonical GIWA
    receivable context and verifies them end to end through the CLI.
-4. The Phase 3A read side now resolves one manually pasted Phase 2.5 capability
-   without publicly enumerating results. This is verification, not a secure
-   delivery channel or proof-submission UI.
+4. The Phase 3A read side now resolves one explicitly imported Phase 2.5
+   capability without publicly enumerating results. This is verification, not
+   a secure delivery channel or proof-submission UI.
 5. ADR-017 adds the separate CLI-to-Vue-to-CLI EIP-712 authorization handoff for
    Provider 2. The current replacement deployment completed a real Seller
    MetaMask authorization followed by Provider attestation, CLI proof creation,
@@ -204,10 +313,19 @@ would replace, not silently coexist with, the custodial Bridge architecture.
    loopback Proof Bridge. The Bridge reuses the proven CLI wallet/private state;
    Vue explicitly authorizes with MetaMask, polls proof submission, and
    independently resolves the returned capability through the read adapter.
-7. Direct Vue + Lace is a viable later self-custody replacement, not a blocker
+7. ADR-019 removes manual proof-subject entry from the product-facing flow.
+   Seller/Buyer select one authenticated DB record and Vue derives its onchain
+   ID and role; the resulting capability is intentionally handed to a Funder,
+   who selects the same DB record/role before exact resolution. This reuses
+   existing Spring reads and adds no persistence or Funding gate.
+8. ADR-020 makes that handoff an explicit clipboard copy or local-file export
+   followed by Funder clipboard/file import. The file and clipboard can outlive
+   Vue memory and carry a correlation warning; no backend transfer, server
+   persistence, URL, or browser-storage channel is added.
+9. Direct Vue + Lace is a viable later self-custody replacement, not a blocker
    or a parallel implementation. Secure capability delivery/access remains a
    separate product concern beyond this local single-user session.
-8. Spring Boot integration is considered only when required by the proven Vue
+10. Further Spring Boot integration is considered only when required by the proven Vue
    flow. Existing GIWA lifecycle APIs and Solidity contracts remain unchanged.
 
 Phase 2.5 and ADR-017 still do not enforce a GIWA funding gate. Provider 2 proves
@@ -221,7 +339,15 @@ refresh round. Independent Seller/Buyer Midnight identities, lifecycle policy,
 secure verifier capability delivery, any direct Lace migration, and later
 backend coordination remain separate work.
 
-## Local PoC Security Controls
+If a later product needs one company financial attestation to support multiple
+receivables, it must not remove the existing receivable/role binding from the
+Provider message. The safe direction is a separately approved, time-bounded
+company credential plus a fresh per-receivable-role ZK presentation/nullifier.
+That requires independent per-company private state, freshness/revocation
+semantics, Compact and Provider protocol changes, and a new ADR. It is not
+implemented by the current MVP.
+
+## Historical v1: Local PoC Security Controls
 
 - Provider secrets must be canonical non-zero Jubjub scalars. The Compact
   registry and verification circuit reject the identity public key `(0, 1)` so
@@ -244,6 +370,10 @@ backend coordination remain separate work.
   `Sec-Fetch-Site: same-origin`, and custom UI header, enables no CORS, requires
   exact JSON/body-only session requests, and returns no-store safe errors
   without request-value, body, stack, secret, or witness reflection.
+- Provider/GIWA failures cross the Bridge boundary only through the fixed safe
+  mappings, and the Compact exact-key assertion is reduced to
+  `ELIGIBILITY_RESULT_ALREADY_EXISTS`. Unknown bodies remain generic; this code
+  is a result-identity conflict rather than an infrastructure-health signal.
 - One active proof session and a common CLI/Bridge process lock prevent
   concurrent mutation of the same encrypted private state. Session IDs are
   cryptographically random, memory-only, one-shot, and never placed in URLs. An

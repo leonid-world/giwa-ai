@@ -3,6 +3,18 @@
 Midnight PoC가 production scope가 아니라는 점
 gasok-midnight 브랜치에서만 작업
 
+현재 로컬 Midnight 제품 흐름은 request-bound v2다. Funder가 채권의
+Seller/Buyer에게 공개 **기준**을 요청하고, 해당 당사자가 자신의
+caller-supplied mock 재무값과 역할 지갑 동의를 제공하면 Compact가 그 기준의
+충족 여부 한 비트만 증명한다. 일반 화면에는 JSON/PIN이 없고 Spring이 요청과
+암호화 capability 전달을 조율한다.
+
+이 결과는 은행·회계기관 검증, 실제 기업 재무의 진실성 보증, GIWA Funding
+승인 또는 자동 펀딩 gate가 아니다. Midnight Preprod/Mainnet에는 배포하지
+않고, GIWA Solidity의 tokenization/funding/repayment 흐름은 변경하지 않는다.
+과거 v1 fixed-policy/clipboard/PIN 화면은 `/midnight/legacy/*` 진단 경로로만
+보존한다.
+
 # GIWA Receivable Financing MVP
 
 ## Overview

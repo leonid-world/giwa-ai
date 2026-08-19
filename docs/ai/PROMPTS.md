@@ -25,3 +25,25 @@ Rules
 - Do not add unnecessary abstractions.
 - Backend never signs blockchain transactions.
 - Frontend always uses MetaMask Signer.
+
+Midnight v2 review checklist
+
+- Treat the Funder's values as public criteria, never as Seller/Buyer facts.
+- Keep Seller/Buyer financial facts transient; never persist them in Vue,
+  Spring/MySQL, logs, URLs, or Midnight public state.
+- Keep request ID, Funder audience, criteria, deadline, GIWA context, deployment,
+  Provider, and freshness cryptographically bound end to end.
+- Do not add a product PIN or raw capability JSON handoff. The Bridge owns the
+  request-scoped nonce; Vue hands the capability directly to Spring.
+- Persist a finalized capability in the encrypted local outbox before exposing
+  completion; ACK/delete it only after Spring durably reports `SUBMITTED` or
+  the idempotent already-`COMPLETED` state.
+- Retry Read API/Indexer lag without replaying the proof. Permanent invalid
+  capability means `FAILED`, envelope purge, and active-request release.
+- Do not add v1 fallback to a v2 request. Legacy `/v1` and
+  `/midnight/legacy/*` paths are diagnostics only.
+- Never describe a Mock Provider result as bank/accounting verification,
+  GIWA Funding approval, or an automatic Funding gate.
+- Preserve one-active-request mitigation and document that adaptive-query
+  budgets/templates/cooldowns are still required.
+- Report both root and `giwa-midnight` Git status when Midnight is touched.
