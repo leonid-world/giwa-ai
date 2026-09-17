@@ -77,3 +77,11 @@ macOS에서는 Docker Desktop이 꺼져 있으면 자동으로 켜서 준비를 
 현재 루트와 각 서브모듈의 작업 브랜치는 `giwa-midnight`입니다. 소스를 받을 때는
 서브모듈도 함께 받아야 합니다. 기존 GASOK `main` 제출 이력과 GIWA 계약은 보존합니다.
 Midnight는 Preview만 사용하며 Preprod와 Mainnet에는 배포하지 않습니다.
+
+현재 공개 데모 소스 받기:
+
+```sh
+git clone --branch giwa-midnight --recurse-submodules https://github.com/leonid-world/giwa-ai.git
+```
+
+배포 커밋과 검증 결과는 [현재 상태](docs/ai/CONTEXT.md)에 기록합니다.

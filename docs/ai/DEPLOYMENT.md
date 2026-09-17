@@ -1,8 +1,29 @@
 # Deployment
 
-## MidProof source release — 2026-09-17
+## Published MidProof release — 2026-09-17
 
-The existing Railway service now runs deployment
+Root code commit `00a409d568cca4f06e013ef30cc0bc507673c31b` and all four pinned
+submodule commits are published on GitHub. A fresh recursive clone supplied the
+Railway upload; the final root documentation commit only records this evidence.
+
+- Vercel: `dpl_8rEwpWrAqR5oYox84BcKvYvEVPvQ`, READY/production at
+  `https://giwa-ui.vercel.app`. Release metadata matches UI commit
+  `82dca577487b07f2910a3f0d8872c27a9b1e9d07`; public HTML and JS/CSS/brand assets
+  match the local build.
+- Railway: `fcbb0ed4-2fd4-4aae-8081-70a72a0d7d58`, SUCCESS and the sole active
+  deployment at `https://giwa-api-production.up.railway.app`. Release metadata
+  matches root code commit `00a409d`; final image is
+  `sha256:62e659606c5e0f3bc6053e2695d8adc1b2fd9ab11ceba7b40f50110ccd5d7efa`.
+- Public health/readiness, Preview configuration, fictional MidProof provider,
+  Seller login, authenticated 1–10,000 mKRW policy and proof-request reads pass.
+  The historical receivable amounts and expired request are preserved. These
+  release checks create no new proof or chain transaction.
+
+Repository/domain renaming remains deferred in the submission checklist.
+
+## Earlier MidProof source validation — 2026-09-17
+
+The earlier Railway source validation used deployment
 `a517b5c6-f460-4d03-b066-6ce2e73f7e4c` (SUCCESS), image
 `sha256:54d7a976e930a1c74efd4248b0a1a69e1852abb0777df9c0f36d06431e8ade05`.
 It includes the demo-only 10,000 mKRW new-issuance cap, authenticated amount policy,

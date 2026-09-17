@@ -4,10 +4,13 @@
 
 - [x] 루트와 각 저장소의 공개 대상 변경·원격 브랜치 상태 확인.
   실제 지갑 상태/비밀값은 제외하고 소스·공개 설정·테스트·문서를 보존.
-- [ ] UI·API·Midnight의 변경을 `giwa-midnight`에 커밋·푸시하고 루트에서
-  정확한 서브모듈 커밋을 기록하여 푸시.
-- [ ] 게시된 커밋으로 기존 Vercel·Railway 배포 완료, 공개 로그인/금액 정책/
-  증명 준비 상태 및 작업 트리·원격 커밋 일치 확인.
+- [x] UI·API·Midnight의 변경을 `giwa-midnight`에 커밋·푸시하고 루트에서
+  정확한 서브모듈 커밋을 기록하여 푸시. GitHub 재귀 클론에서 네 내부 소스와
+  고정 커밋을 확인. 코드 릴리스 루트 커밋 `00a409d`.
+- [x] 게시된 커밋으로 기존 Vercel·Railway 배포 완료, 공개 로그인/금액 정책/
+  증명 준비 상태 및 작업 트리·원격 커밋 일치 확인. Vercel `dpl_8rEwpWrAqR5oYox84BcKvYvEVPvQ`
+  READY, Railway `fcbb0ed4-2fd4-4aae-8081-70a72a0d7d58` SUCCESS/활성.
+  최종 배포 증거는 CONTEXT.md와 DEPLOYMENT.md에 기록.
 - 계약 저장소는 변경 없음. 기존 저장소/브랜치 체계를 사용하며 제출 직전
   새 단일 저장소·Vercel 주소 전환은 별도 TODO로 보류한다.
 

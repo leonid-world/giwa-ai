@@ -26,8 +26,26 @@ ignored; published VITE values and Compact prover/verifier artifacts are public.
 Vercel deployment `dpl_8rEwpWrAqR5oYox84BcKvYvEVPvQ` is READY/production,
 aliased to `giwa-ui.vercel.app`. Metadata `releaseCommit` matches the UI SHA above.
 Public HTML and entry JS/CSS plus MidProof logo/favicon/OG image match the local
-build by SHA-256. Root commit and Railway release evidence are recorded below
-after the root is published and a fresh recursive clone is deployed.
+build by SHA-256. Root code-release commit `00a409d568cca4f06e013ef30cc0bc507673c31b` is published
+on `origin/giwa-midnight`. A fresh network `git clone --branch giwa-midnight
+--depth 1 --recurse-submodules --shallow-submodules` from GitHub retrieved that root
+and all four exact submodule SHAs, with clean trees, required Docker/build/prover
+inputs and no .local runtime state. Railway deployment
+`fcbb0ed4-2fd4-4aae-8081-70a72a0d7d58` was uploaded from this fresh published checkout;
+its release message identifies the exact root code SHA. It is SUCCESS and the
+only active deployment, with final image
+`sha256:62e659606c5e0f3bc6053e2695d8adc1b2fd9ab11ceba7b40f50110ccd5d7efa`.
+Public `/health` and `/ready` return 200 with proof readiness true. Demo config
+reports Preview, `MidProof Demo Attestation`, mock provider and ready runtime.
+Seller login, authenticated amount policy (1–10,000 mKRW, suggested 1,000/900),
+and assigned proof-request reads succeed. The existing TOKENIZED receivable
+(on-chain ID 2, face 1e12, funding 1e10) remains unchanged. The historical Seller
+request is EXPIRED as expected; this release verification creates no new proof
+or blockchain transaction.
+
+All component branches match their published commits and have clean worktrees.
+The subsequent root documentation-only commit records this evidence and the
+clone command; runtime code and submodule pointers remain those of `00a409d`.
 
 ## 2026-09-17 MidProof identity and small demo amounts
 
