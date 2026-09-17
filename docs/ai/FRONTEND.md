@@ -1,3 +1,37 @@
+## MidProof UI — 2026-09-17
+
+Current product name: **MidProof**. Original mint M symbol, dark teal palette,
+logo/favicon/Apple/share assets, metadata and per-route titles replace the prior
+Midnight-copy branding. Explanations are concise while fictional fixtures/provider,
+hosted witness processing, consent, result expiry/failure and recovery stay explicit.
+
+The authenticated receivable amount policy supplies demo max 10,000 mKRW and
+suggested face 1,000/funding 900. Inputs remain strings (text + numeric input mode)
+for exact BigInt validation; no floating-point conversion. New issuance/funding
+fails closed before wallet interaction on policy failure or cap violation. Existing
+receipt recovery and already-funded repayment retain full historical amounts.
+List selection uses request ordering so late responses cannot change Buyer consent.
+Vue 205 tests, production build, ESLint and Oxlint passed. Domain migration is deferred.
+
+## Integrated hackathon demo — 2026-09-15
+
+The owner approved a Vercel production demo and Preview backend. With
+`VITE_MIDNIGHT_DEMO_ENABLED=true`, the normal v2 request/response routes are
+included in production. Legacy manual/private-input diagnostics remain dev-only
+and are excluded from the hosted demo. Vue and existing GIWA wallet flows stay.
+
+The existing `VITE_API_URL` selects the single integrated gateway. Hosted proof
+calls use bearer authentication, and status/prove/cancel also carry the request
+ID for ownership checks. The public demo config pins the Preview deployment used
+when validating EIP-712 and returned capabilities; local addresses are not a
+fallback. Config must be ready before the synthetic proof button is enabled.
+
+The assigned-request screen selects a named synthetic company profile instead
+of arbitrary financial values. The operator-hosted fictional institution signs
+its fixture. A shared status banner shows automatic backend preparation and
+readiness. Normal completion/recovery remains JSON/PIN-free. No server keys,
+private state or financial witness data is placed in the Vue bundle.
+
 # MOST IMPORTANT For Midnight work
 
 ## Midnight
@@ -329,10 +363,31 @@ Frontend never stores private keys.
 
 Visual consistency
 
-- Preserve the existing light green product theme and route/component structure.
+- Public branding is Midnight (owner follow-up supersedes combined branding), referencing the white wordmark and dark /
+  electric-blue palette at https://academy.midnight.network/. The official SVG
+  is stored locally at `giwa-ui/public/midnight-logo.svg`; no runtime logo fetch
+  or new third-party script/font is introduced.
+- `--color-action` is the saturated button background; `--color-brand` is the
+  lighter text/icon color for readable contrast. Success, warning, and failure
+  retain distinct semantic tokens. Transaction copy uses neutral network terms without claiming Midnight asset settlement.
+- Login/signup, shared header/footer, dashboard, 404, all active business and
+  Midnight diagnostic screens share the dark theme. The dashboard puts the
+  existing feature-gated Midnight request action first.
+- SEO and social images describe local mock proof evaluation, never bank
+  verification or Midnight settlement. Old deployment-origin references were removed on owner follow-up. Image
+  paths are host-relative; canonical and `og:url` await a confirmed origin.
+  Regenerate absolute social URLs and sitemap before publication.
+- Old `og.png` / `og-saas.png` URLs remain copies of the new assets;
+  the obsolete branded favicon filename was removed.
+  `og-midnight.svg` is the editable social-card source; `og-midnight.png` is the
+  1200x630 sharing image. Favicon SVG/ICO/64px and 180px Apple icon use the
+  symbol from the supplied Midnight SVG on a dark background.
+
+- Use the owner-requested Midnight dark theme (2026-09-12) while preserving
+  the existing route/component structure and business behavior.
 - `main.js` imports `assets/main.css`, which applies the project baseline from
-  `base.css`. The baseline is light-only and limited to box sizing, body/app
-  dimensions, typography, background, and native font inheritance.
+  `base.css`. The baseline is explicitly dark and defines shared surface, text, action,
+  focus, and semantic status colors alongside box sizing, dimensions, and typography.
 - Do not restore the Vue starter automatic dark theme or universal
   `font-weight: normal`/margin reset; active screens use explicit scoped spacing
   and semantic type hierarchy.
@@ -340,7 +395,7 @@ Visual consistency
 - Primary, secondary, list-row, and explorer actions keep distinct hover,
   disabled, and focus-visible states.
 - Inputs and textareas keep the existing shape and receive consistent hover and
-  green focus-ring feedback.
+  high-contrast lavender focus-ring feedback.
 - Panels use the same subtle border, 16px-scale radius, and restrained shadow.
 - Responsive rules preserve the current flows while reducing padding and
   wrapping actions at narrow widths.
@@ -351,7 +406,7 @@ Public demo release quality
   description, browser theme color, canonical production URL, Open Graph
   metadata, and Twitter Card metadata.
 - Public assets include an optimized favicon, Apple touch icon, dedicated
-  1200x630 GIWA social card, `robots.txt`, and a root-only `sitemap.xml`.
+  1200x630 Midnight social card, `robots.txt`, and `robots.txt`; sitemap regeneration awaits the new deployment origin.
 - Authenticated pages and the client-side not-found route are marked
   `noindex, nofollow` at runtime.
 - Router metadata sets a distinct browser title for Login, Dashboard,
@@ -703,3 +758,14 @@ Wallet UX rules
 - If it is still unavailable, show both the receivable's expected address and the
   first permitted address so the user can select the correct account or identify a
   stale wallet mapping.
+
+### Branding and signed data boundary (2026-09-12 follow-up)
+
+Visible application copy excludes the previous project/network brands. Signed
+EIP-712 domain/type/purpose, actual network configuration, HTTP header names,
+wire keys, and real explorer/faucet destinations remain unchanged. MetaMask's
+external signature prompt may display the existing protocol domain; do not
+mutate signed data merely to alter its display. Legacy local exports use
+`midnight-proof.json`, while the old import extension stays compatible.
+This supersedes historical `.gasok-proof` export-name instructions above only;
+privacy handling and file validation remain unchanged.

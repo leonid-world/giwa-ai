@@ -1,5 +1,434 @@
 # Current Context
 
+## 2026-09-17 Owner requested committing, pushing and deploying all changes
+
+The owner explicitly requested publishing all current source changes and completing
+both deployments. This includes the previously uncommitted integrated Preview demo
+and MidProof UI/amount policy, with root documentation and submodule commit pointers.
+Use existing repositories and `giwa-midnight`; the deferred final-submission repository
+and domain rename is a separate task. Preserve ignored runtime wallets/private state
+and credentials locally, and do not change deployed Solidity or existing DB state.
+Published inner repositories on `origin/giwa-midnight`:
+- UI: `82dca577487b07f2910a3f0d8872c27a9b1e9d07`.
+- Spring API: `6637fefed90469d0765bfad39814f81e88330f13`.
+- Midnight: `6c12b35acc64614ac53f4e3836fac0f8a8738a77` (new remote branch,
+  original `main` remains `aa02835f900b2f71cb996fb3ed335f901f936075`).
+- Unchanged Solidity: `b15a2fbc5bb10e665a8093f5e60a8a0e9c6e099d`.
+
+All inner worktrees are clean and the relevant remote heads match. Validation:
+Spring 102/102 tests and bootJar; existing UI 205 tests, final build and lint;
+Midnight Contract 39, Read API 61, Attester 88, CLI 186 passed with one optional
+environment E2E skipped. All four Midnight workspace builds also passed from an
+export containing only committed files after npm ci. Root runner/bootstrap tests
+14/14 and shell syntax checks passed. Actual private state/credentials remain
+ignored; published VITE values and Compact prover/verifier artifacts are public.
+
+Vercel deployment `dpl_8rEwpWrAqR5oYox84BcKvYvEVPvQ` is READY/production,
+aliased to `giwa-ui.vercel.app`. Metadata `releaseCommit` matches the UI SHA above.
+Public HTML and entry JS/CSS plus MidProof logo/favicon/OG image match the local
+build by SHA-256. Root commit and Railway release evidence are recorded below
+after the root is published and a fresh recursive clone is deployed.
+
+## 2026-09-17 MidProof identity and small demo amounts
+
+The owner chose **MidProof** as the project name. Only the three exact historical synthetic company names are displayed as short
+Korean role labels; source names, company IDs and wallets are preserved. Current UI identity is an original
+geometric M logo with a dark teal/mint palette, not the Midnight network logo.
+Browser titles, metadata, favicon/Apple/share assets, navigation/footer, login and
+fictional provider display name use MidProof. Midnight remains the factual proof
+network. Protocol domains, account email/password, persisted identities and source
+folder names are unchanged. Historical branding sections below are superseded.
+
+New demo receivables use 1–10,000 integer mKRW, funding <= face value, suggested
+face 1,000 / funding 900. Repayment is the exact full face value. The authenticated
+`GET /receivables/amount-policy` is authoritative; Spring rejects oversized new
+issuance. Vue preserves decimal strings and validates with BigInt, reloads policy
+before create/new funding approvals/transfers, and fails closed before wallet
+interaction if policy is unavailable/invalid. The cap is application/demo policy,
+not a change to deployed Solidity. Non-demo new issuance retains the old range.
+
+Read-only GIWA RPC on 2026-09-17 confirmed MockKRW decimals 0, totalSupply
+1,000,000,000, faucet claimAmount 10,000,000 and faucet inventory 580,000,000.
+New maximum face value is 0.001% of supply; one full faucet claim covers 1,000
+maximum-size face payments before fees/other usage. Individual wallet balances and
+faucet eligibility must still be checked. Annual financial ZK fixture values and
+policy criteria are separate from these token-denominated receivables and unchanged.
+
+The historical chain #2 has face 1,000,000,000,000 and funding 10,000,000,000.
+Never shrink its displayed/DB/chain values. New UI funding on an oversized legacy
+record is blocked; already-funded obligations and mined receipt recovery retain
+the exact original amounts. A fresh demo setup prepares accounts and skips creating
+that oversized historical record, then the owner creates a small receivable in UI.
+Existing matching legacy records retain full replay/identity checks. No DB reset,
+wallet replacement, new chain transaction or contract change was performed for this.
+
+Shortened copy preserves synthetic-data/provider disclosures, operator witness
+handling, signer/role/terms checks, user consent, valid false versus failure/denial,
+expiry and retry-without-resubmission. Receivables selection uses request ordering
+and resets Buyer consent on a new selection; stale responses cannot carry consent
+over. Funding rechecks captured selection after asynchronous readiness checks.
+Validation: Vue 205/205; production build; full source ESLint/Oxlint; targeted Spring
+41/41 including legacy debt/receipt lifecycle and non-demo behavior; bootstrap/runner
+14/14; gateway 19/19 and Midnight CLI build. Public deployment/visual verification
+is recorded below; prior successful proofs are historical and may expire.
+
+Railway deployment `a517b5c6-f460-4d03-b066-6ce2e73f7e4c` is SUCCESS. Public
+`/health` and `/ready` return 200/proofReady=true; fictional provider display name is
+MidProof Demo Attestation. Authenticated live amount policy is 1–10,000 with defaults
+1,000/900. A deliberately rejected 10,001/900 create returned 400
+DEMO_RECEIVABLE_AMOUNT_LIMIT_EXCEEDED and the one existing receivable was unchanged.
+No successful create or new wallet transaction was performed. Browser checks on the
+public origin confirmed MidProof login/title/theme, Seller login, defaults 1,000/900,
+disabled submission for 10,001, funding>face and 0.5; repayment's new-debt guidance;
+Funder's legacy high-debt funding block; and expired historical proof requests remain
+expired. Served favicon SVG/ICO, logo and OG PNG match local SHA-256 hashes. A final
+visual pass found and corrected low-contrast funding text inherited from old CSS,
+normalized funding/repayment token displays to mKRW, and clarified the legacy block.
+
+Final Vercel deployment `dpl_5TK5u4fv69uzk9UFvwyet5gBrdJj` is READY and aliased
+to `https://giwa-ui.vercel.app`. Final browser login title is `로그인 | MidProof`.
+Funding heading/body now use rgb(241,247,247) on dark surfaces, mKRW labels and
+short legacy-debt guidance; desktop viewport 1728px had no horizontal overflow.
+Login demo-role and profile copy-button hover styles were also corrected to retain
+dark backgrounds. No mobile/browser-wallet transaction coverage is claimed.
+
+Files changed for this request: UI `index.html`, public MidProof logo/favicon/share
+assets (including compatibility URLs), `App.vue`, router titles, base theme, status
+banner, page copy, company-name display helper, three financial views, receivable
+store and amount-policy/web3 guards plus targeted tests. Spring adds the amount
+policy/DTO/endpoint and create validation with amount/lifecycle tests. Midnight's
+hosted demo config/gateway change only display labels. Root bootstrap avoids new
+oversized legacy records and has four regression tests. README, TODO, CONTEXT,
+FRONTEND, PROJECT, DEPLOYMENT and the deferred release checklist record the outcome.
+This is a description of this request, not every pre-existing working-tree change.
+No architectural decision changed, so DECISIONS received no additional entry.
+
+At the end of the UI editing request, before the later publish request, root and
+Midnight inner repository were on `giwa-midnight`, with uncommitted changes preserved. Root Git records submodule commit pointers; the Midnight inner
+repository tracks its files. UI/API also remain dirty on giwa-midnight; Solidity
+repository is clean. No commits, pushes, repository/domain rename or new services.
+
+The final submission repository and Vercel name/domain cleanup remains deferred.
+Project name is now fixed; exact repo/domain names and availability remain to check.
+
+## 2026-09-15 Deferred repository and domain cleanup before submission
+
+The owner subsequently approved both reminder mechanisms. AGENTS.md now requires
+reading the release checklist and unfinished TODOs and reminding the owner when
+final submission, submission preparation or submission-link cleanup is requested.
+A thread heartbeat named "Midnight 제출 전 저장소·주소 정리 알림" (automation ID
+`midnight`) is ACTIVE for September 24–27, 2026 at 20:00 Asia/Seoul each day.
+It reads current checklist/context records and reports unfinished work in this
+conversation. Its prompt pauses the reminder when completion is evidenced, the
+owner confirms final submission, or the owner asks to stop; the schedule has no
+runs after September 27. Local-file runs require the computer and Codex app to
+be running. It does not perform repository, deployment, domain, DB, wallet or
+submission changes. Creation and the persisted schedule were verified; no future
+notification is claimed to have already run.
+
+The owner asked to finish several more feature tasks before preparing the final
+submission repository and renaming the Vercel project/domain. Keep this work
+deferred during normal feature development, then follow
+[MIDNIGHT_RELEASE_CHECKLIST.md](MIDNIGHT_RELEASE_CHECKLIST.md) during final
+submission preparation, allowing time for a fresh-clone build and demo rehearsal.
+The planned direction is a new public repository containing all required source
+as ordinary folders, with `main` as the Midnight submission branch; preserve the
+existing GASOK repositories and provenance. Future Midnight development should
+continue in that single repository. Exact names, ownership and publication scope
+remain unset. Existing Vercel/Railway application/MySQL infrastructure is reused.
+The repository/domain transition remains deferred: only reminder instructions,
+documentation and the scheduled task were configured. No repository, branch,
+remote, deployment or domain was changed. Current implementation and original submission history
+must remain distinguishable; a new repository does not establish reuse eligibility.
+
+## 2026-09-15 Owner-approved integrated synthetic Preview demo
+
+The owner approved the previously researched minimal deployment design and
+explicitly requested changing AGENTS.md's local-only restriction. The current
+target is one IntelliJ Spring **Midnight Demo** Run and one integrated application
+deployment in the existing Railway project, keeping Vercel and the existing
+MySQL service. No Preprod/Mainnet deployment or GIWA contract rewrite is allowed.
+The historical local-only sections below describe earlier work, not current scope.
+
+Implemented runtime: a Node gateway owns local port 18080 (Railway PORT), Spring
+listens privately on 18081 (Railway 8081), and a real Proof Server 8.1.0 handles
+proving. Attestation, Bridge and Read API reuse the existing modules within this
+runtime. Public Preview supplies Node/Indexer. The local runner automatically
+prepares isolated MySQL on 3307 and the official prover Docker container; Railway
+uses the native prover and its Nix closure inside the same application image.
+No Docker daemon is required in Railway. Other projects/containers are preserved.
+The unrelated Java application occupying port 8080 was not stopped.
+
+`scripts/prepare-midnight-demo.mjs` uses normal authenticated application APIs
+to prepare three explicitly fictional accounts/companies and to import existing
+public GIWA receivable #2 into the dedicated demo DB. Existing create/verify/tokenize
+receipts were checked by Spring RPC; no new GIWA transaction was sent. Repeating
+preparation preserved companies/users/wallets/receivables/journal counts 3/3/3/1/3.
+Shared demo role login buttons use those accounts. Seller/Buyer consent still
+requires the corresponding existing MetaMask wallet; account login is not consent.
+
+Hosted challenges accept only version/requestId/profileId. The gateway expands
+the fixed fictional financial fixtures and uses Spring JWT plus a private internal
+token to authorize request/session ownership. The original EIP-712 consent,
+Compact policy/signature checks, encrypted outbox, delivery ACK and independent
+Spring result verification are retained. Raw financial inputs do not go to Spring
+or MySQL/public ledger. The hosted operator can process synthetic witness values;
+this is a fictional institution, not bank-verified information. Production Vue
+builds now include authenticated v2 demo routes, while legacy diagnostic routes
+remain development-only. Preparation status is visible and proof actions wait
+until the actual runtime is ready.
+
+Validation so far: Spring 96/96 tests and actual Java lifecycle smoke; Vue 148/148
+tests, production build and ESLint/Oxlint; Midnight CLI 186 pass/1 skip, Provider
+88 and Read API 61 tests; runner 10/10 including Docker startup handling.
+Native prover 8.1.0 executed in composed ARM64 and AMD64 Linux runtimes, and full
+image builds succeeded for both architectures. ARM64 image cold-start reached automatic fixture preparation,
+Spring/gateway/native prover with `/health` 200 and `/ready` 503 while the wallet
+was syncing. The runtime correctly distinguishes process availability from proof
+readiness. In-memory SDK 4.1.1 circuit checks produced genuine proof bytes for
+steady=true and stretched=false (serialized proven transactions 5755/5757 bytes); this is not chain or
+MetaMask/browser E2E validation.
+
+The freshly generated persistent local Preview wallet has received 5,000 tNight,
+confirmed by public Indexer created UTXO value 5,000,000,000 at transaction ID
+63024. All three SDK subwallets connected; shielded and DUST must replay roughly
+235,000 initial ledger events, while unshielded synchronization has completed.
+On 2026-09-15 at approximately 14:12 KST, initial synchronization, DUST
+registration, actual Preview contract deployment and fictional Provider 2
+registration/public-key validation all completed. The persistent deployment is
+`bfb760db44f9ee7996ef12c47e56346903c654aede7d65c3c88110214c932a1e`.
+The gateway `/ready` returned 200/proofReady=true and Vue displayed ready.
+The real browser created Seller and Buyer requests with the default criteria,
+logged into the shared Seller account, displayed its assigned request and
+synthetic profiles, and obtained a genuine request-bound challenge. The UI
+reached the MetaMask account/consent stage. The wallet then returned a different
+allowed account, and the expected-role guard correctly reported WALLET_MISMATCH
+before signing. The owner confirmed that this account is in the same `Leonid`
+Chrome profile, named `GIWA Testnet(Seller)` in MetaMask; changing browser
+profiles or importing the wallet is unnecessary. The owner subsequently allowed the registered Seller account
+(`0x6060…4361`) and approved the real MetaMask signature. Seller request #1 then
+completed the synthetic attestation, actual proof and Preview submission, durable
+Spring delivery and Bridge ACK cleanup. Switching back to Funder showed the
+Seller response completed and the requested criteria satisfied.
+
+An independent read-only query of
+`https://indexer.preview.midnight.network/api/v4/graphql` confirmed the latest
+contract action is `verifyEligibility`, with transaction result `SUCCESS`,
+transaction hash
+`7dd331347d83750908c10863242206dda8d799337015e2d1c6a7d48cab2385cd`,
+Indexer transaction ID 63097 and block 872472 (2026-09-15 15:09:18.001 KST).
+Decoding the public contract state found exactly one eligibility result:
+`eligible=true`, Provider 2, evaluationVersion 2, issued at
+2026-09-15 15:08:36 KST and valid until 2026-09-16 14:12:42 KST.
+Both timestamps exactly match the Funder UI. Raw state, lookup keys, capabilities
+and private keys were not printed. This verifies the Seller browser-to-Preview-
+to-Funder path; Buyer and a valid false-result browser/chain path remain unverified.
+
+The hosted wallet now checkpoints all three SDK states under encryption and
+restores their cursors. A separate unfunded SDK round-trip preserved its address
+and exact shielded/dust/unshielded positions 9408/1827/0 through serialization,
+encryption and restart, without a chain transaction. The funded demo instance
+was restarted on the final code, preserving the same wallet, deployed contract,
+Provider and two requests. At 14:27 KST its full initial replay completed;
+the subsequent Java restart reached `/ready` 200 within 27 seconds of process
+launch (first successful observation), compared with roughly nine minutes for
+the preceding full replay. This is an observation on this Mac, not a guaranteed
+cold-cloud-start duration. The encrypted complete wallet checkpoint is now
+present for later Runs. Hosted DUST preparation waits for generated resources
+rather than failing merely because a previously registered wallet temporarily
+has zero available DUST.
+The final error-path review also added explicit SDK recipe reversal after
+pre-broadcast finalization failure and disables checkpoint replacement after a
+transaction error. This preserves the last healthy snapshot even when SDK coin
+reservations are not represented by its pending-transaction list. Dedicated
+regressions passed; the hosted subset contains 30 tests.
+Runtime identities and keys live under ignored
+`.local/midnight-demo` with restricted permissions. They are not included in the
+Docker context. Railway and Vercel CLI authorization have now completed.
+The existing Railway application was reconfigured for the root integrated
+image, with a 5 GB persistent `/data` volume, one replica and 30-second graceful
+draining. The old standalone `giwa-api` main source trigger was disconnected;
+future uploads use the populated root checkout. The project still contains only
+the application and existing MySQL services. No billing upgrade was performed.
+
+The local demo was stopped before migration. Its eight demo tables were copied
+into a new logical `gasok_midnight_demo` database inside the existing MySQL
+service; every row including encrypted capability bytes, schema, constraints
+and auto-increment metadata matched. The original seven-table `railway`
+database was preserved. The encrypted identity, wallet checkpoint, private state,
+outbox and capability key were restored together to `/data/midnight-demo`, with
+archive integrity verified and stale process locks excluded. Private backups
+remain ignored and restricted. The local copy and Railway share a wallet
+identity: do not Run both simultaneously; Railway is the active writer.
+
+Railway deployment `35dbfd8b-2067-46a6-adcd-02b198c787d3` now runs the actual
+native prover, Spring and Node gateway. Its explicit start command is
+`/app/scripts/midnight-container-entrypoint.sh`; the API's earlier null update
+did not clear the temporary migration hold. Public `/health` returns UP with
+proofReady true, `/ready` returns 200, and all three restored wallet states are
+connected and synchronized. The contract and funded wallet addresses match the
+local demo. Public authenticated CORS/login, receivable #2 and both proof
+requests were verified. Resolving the completed Seller request successfully
+decrypts its migrated capability and reads the same Preview eligible=true,
+Provider 2/version 2 result with the exact original issue and expiry times.
+
+A separate in-memory proof check against Railway's actual native prover passed:
+steady=true produced 5,755 bytes in 2,843 ms and stretched=false produced 5,757
+bytes in 1,940 ms. This used fresh temporary keys and did not open the running
+wallet, submit a transaction, or establish a new browser-to-chain proof.
+Vercel deployment `dpl_8uWMXSTE1h7TWXYiJGKKBEuMrewX` was promoted to the existing
+`https://giwa-ui.vercel.app` domain; its thirteen public Production configuration
+values were persisted and verified. In the actual public browser, the Funder
+demo login button opened the original requests and the public-result button
+displayed the Seller's criteria-satisfied result with the original issue/expiry
+timestamps. The Midnight runtime reports ready in the UI. A fresh hosted Buyer consent
+and chain rehearsal remains to be performed with the owner's MetaMask wallet.
+The existing service IDs and root-upload command are in DEPLOYMENT.md.
+
+Root and submodule branches remain `giwa-midnight`. Existing branding/submission
+work was preserved. Root Git tracks the submodule commit pointers only; the inner
+repositories track their own modified/new files. No commit, push, or submodule
+pointer update has been made for this work.
+
+## 2026-09-12 Follow-up: Midnight-only public branding
+
+The owner explicitly rejected the combined GASOK · Midnight branding. This
+supersedes the initial presentation choices in the section below. Visible Vue
+copy, navigation/footer/logo labels, SEO, social artwork, transaction progress,
+validation messages, and diagnostic copy now use Midnight or neutral network
+terms. The public README introduction is updated; existing source history and
+actual architecture remain documented here without an originality claim.
+
+The old deployment origin was removed from canonical/social/robots metadata;
+image references are host-relative; canonical and `og:url` are omitted until
+a new origin is confirmed. The old sitemap and
+obsolete branded favicon filename were removed. A confirmed new deployment
+origin is still needed for absolute social URLs and a regenerated sitemap.
+Legacy proof downloads now use `midnight-proof.json`; prior import extensions
+remain supported without advertising their old brand in visible instructions.
+
+Frontend service changes are presentation strings and the local download name
+only. Backend, Proof Server, network IDs/addresses, EIP-712 domain/type/purpose,
+API keys/headers, and request/response schemas remain unchanged. In particular,
+MetaMask may still display the existing signed `GASOK Mock Attestation` domain;
+changing that requires a coordinated backend/protocol task, outside the owner's
+frontend-only scope. Real chain explorers and faucet destinations are retained
+so asset transactions are not misrepresented as Midnight transactions.
+
+Follow-up validation: 141/141 tests, production build, ESLint/Oxlint and
+Git diff checks passed. Browser text/title audit found no old brand names on
+login or the 11 business/Midnight/404 routes in their available states. Backend
+remained unreachable; no live proof/signature or asset transaction was run.
+The regenerated PNG artwork was visually inspected.
+
+
+## 2026-09-12 Midnight frontend branding and dark theme
+
+Owner-authorized presentation-only update in `giwa-ui`: GASOK · Midnight brand,
+local white Midnight wordmark, dark surfaces/electric-blue actions, login/signup
+privacy introduction, dashboard emphasis, shared header/footer/404, and all active
+business and Midnight page palettes. SEO titles/descriptions/social metadata,
+favicons, Apple icon, and 1200x630 social thumbnails use the same identity.
+The supplied Academy logo and reference page are recorded in FRONTEND.md and
+the UI README. Old asset URLs now serve the new artwork for compatibility.
+
+No API, service/composable/store protocol logic, wallet behavior, feature flags,
+proxy configuration, Proof Server, Midnight workspace, or GIWA contracts changed.
+Midnight remains local mock-attested policy proof evaluation; GIWA remains the
+transaction network. This is visual work, not new proof functionality or a fresh
+successful proof E2E. Production continues excluding local Midnight proof routes.
+The existing public origin is retained in canonical/OG/sitemap metadata because
+no replacement deployment domain has been assigned. No publication/deploy occurred.
+
+Validation on Node 24.19.0: production build, 21 files / 141 tests, ESLint and
+Oxlint passed. Browser inspection covered desktop login/signup, dashboard,
+business/profile routes, v2 request inboxes and legacy diagnostics. Backend was
+unreachable during UI review, so data-loaded flows, signatures, and live proofs
+were not executed; backend processes were not started or modified. All 11
+authenticated/diagnostic/404 routes had no horizontal page overflow at 320px;
+login/signup was also checked at 375px. The generated social card was visually
+inspected, and icon/image dimensions verified.
+
+Root has pre-existing AGENTS.md / submission documentation changes, preserved.
+Frontend changes live in the `giwa-ui` submodule working tree; root Git tracks
+its commit pointer, not the inner files. No commit or pointer update was made.
+
+
+## 2026-09-10 Midnight submission requirements and demo priority
+
+The owner confirms Luma registration is complete. Submission requirements and
+sources verified on 2026-09-10 are recorded in
+[MIDNIGHT_HACKATHON_SUBMISSION.md](MIDNIGHT_HACKATHON_SUBMISSION.md).
+The deadline is 2026-09-28 00:00 KST (the end of September 27).
+
+The owner intends to prepare a new public Midnight submission repository because
+the current work evolved on a branch of the previous GIWA GASOK hackathon project.
+Its name, packaging, and publication are pending. A new repository is an owner
+preference, not an official requirement or proof of originality. Document the
+GASOK baseline, pre-existing Midnight work, and work actually added during this
+event; existing-code reuse eligibility still needs confirmation.
+
+The priority is judge-reproducible source/build and a working v2 demo, supported
+by consistent README, implementation evidence, video, Deck, and submission text.
+Local Devnet is allowed. Current runtime readiness has not been reverified by
+this documentation task; historical test/E2E records must not be presented as
+a fresh successful run. The final submission checklist is at the top of TODO.md.
+No repository was created/published, no submodule pointer changed, and no form
+was submitted. Existing architecture and local-only Midnight limits remain.
+
+## 2026-09-04 Midnight hackathon repository preparation
+
+The owner has closed the GASOK hackathon effort and plans to reuse the Midnight
+presentation implementation for a new Midnight hackathon. Preserve the GASOK
+submission on root `main`. The actual current working branch is `giwa-midnight`
+in the root and all four repositories (`giwa-api`, `giwa-ui`, `giwa-contrract`,
+and `giwa-midnight`); older `gasok-midnight` references below are historical.
+Branding/UI changes and any architecture changes are separate follow-up work.
+
+The empty `giwa-midnight/` directory was an uninitialized submodule, not an
+empty Midnight branch. Git commands inside it resolved to the parent root,
+which made its branch appear to follow the root. No active checkout hook or
+branch-synchronization configuration was found in the inspected Git settings.
+`git submodule update --init -- giwa-midnight` restored the root-pinned commit
+`aa02835f900b2f71cb996fb3ed335f901f936075`, also the inner `main`/`origin/main`.
+A local inner `giwa-midnight` branch was created at that same commit without
+tracking `origin/main`. All 118 tracked files and existing history are preserved.
+The root gitlink already points to this commit, so no pointer change was needed.
+No commit, push, new remote repository, or deployment was performed.
+
+Root Git tracks only a submodule commit pointer; the inner repository tracks
+its own files and branches. Switching the root does not select a same-named
+inner branch. For this existing local checkout, return to Midnight work with:
+
+```sh
+git switch giwa-midnight
+git submodule update --init -- giwa-midnight
+git -C giwa-midnight switch giwa-midnight
+git -C giwa-api switch giwa-midnight
+git -C giwa-ui switch giwa-midnight
+git -C giwa-contrract switch giwa-midnight
+git status --short --branch
+git -C giwa-midnight status --short --branch
+git submodule status
+```
+
+The inner Midnight branch is local-only until separately published. A fresh
+clone can restore the pinned source with submodule update, then create its local
+branch with `git -C giwa-midnight switch --no-track -c giwa-midnight main`
+while `main` still points to the recorded commit. Submodule update normally
+checks out the pinned commit in detached HEAD; select the branch afterward.
+Do not use forced checkout/reset to bypass uncommitted-work conflicts.
+
+Validation: inner `main` and `giwa-midnight` have identical commits/trees,
+the working tree is clean, `git fsck --full` passed, and all four submodule
+HEADs match the root's recorded pointers. The CLI build was attempted but
+stopped at `tsc: command not found`: this restored checkout has no installed
+`node_modules`. Runtime/build readiness is therefore not verified. Restoring
+source does not restore ignored private state or start the local Node, Indexer,
+or Proof Server; historical runtime evidence below is not a new live check.
+
+## Previous implementation context
+
 Project
 
 GIWA Hackathon

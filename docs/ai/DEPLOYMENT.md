@@ -1,6 +1,293 @@
 # Deployment
 
-## Current Midnight v2 Local Deployment
+## MidProof source release — 2026-09-17
+
+The existing Railway service now runs deployment
+`a517b5c6-f460-4d03-b066-6ce2e73f7e4c` (SUCCESS), image
+`sha256:54d7a976e930a1c74efd4248b0a1a69e1852abb0777df9c0f36d06431e8ade05`.
+It includes the demo-only 10,000 mKRW new-issuance cap, authenticated amount policy,
+small-demo bootstrap compatibility, and fictional provider MidProof display name.
+The public `/health` and `/ready` are 200 and proofReady=true. Live Seller policy
+returns suggested 1,000/900; 10,001/900 is rejected with 400 and original DB row is
+unchanged. The existing project/service/DB/volume/wallet/contracts are preserved;
+no extra service, GIWA contract change or new blockchain transaction was needed.
+
+Vercel uses the same public origin and Production settings, now with original
+MidProof branding and strict small-amount UI. Repository/domain rename remains
+in the deferred submission checklist. Final Vercel deployment ID and browser
+verification are recorded in CONTEXT.md.
+
+## Midnight hosted demo: one Run / one application deployment
+
+The owner approved a separate `midnight-demo` profile on 2026-09-15. This
+profile uses public **Preview**, synthetic financial fixtures, and the actual
+8.1.0 Proof Server. It does not deploy to Preprod or Mainnet. The historical
+`undeployed` PoC and normal GASOK profile below remain available independently.
+
+### Runtime ownership
+
+| Component | Local demo | Railway demo |
+| --- | --- | --- |
+| Vue | Existing Vite process | Existing Vercel project |
+| Public gateway, attestation, proof bridge, result reader | One Node child, port 18080 | Same application container, Railway `PORT` |
+| Spring business API / public-context authority | IntelliJ Run, loopback 18081 | Same container, loopback 8081 |
+| Proof Server 8.1.0 | Native binary if installed; otherwise automatically started Docker container | Official Nix binary and its dependency closure inside the application image |
+| MySQL | Automatically created isolated demo container, loopback 3307 | Existing separate MySQL service |
+| Midnight node and indexer | Public Preview endpoints | Public Preview endpoints |
+
+Only the gateway receives a public Railway domain. The browser sends a selected
+`profileId`; the Node gateway expands it into a fixed synthetic financial
+fixture and passes the witness to its local prover. Spring only authorizes
+public request context. The operator can access the fixture/witness inside this
+hosted runtime. The provider signs synthetic fixtures and is explicitly a mock
+provider, not a bank. Proof jobs use asynchronous status polling rather than
+holding an ingress connection open during proving. The gateway opens while
+wallet synchronization, faucet funding, and contract setup are still pending;
+its config endpoint reports progress and proof routes remain unavailable.
+
+### Local: press IntelliJ Run once
+
+The migrated local state and Railway currently share the same Midnight wallet
+identity. **Do not run the local migrated demo while the Railway wallet is
+running.** Cross-host writes can conflict even though each host has its own
+local process lock. Distributed ownership/fencing and separate development
+identity management have not been implemented. Keep the migrated local runtime
+stopped; any intentional move back requires stopping the cloud writer first
+and using its latest state, not the stale pre-migration local copy.
+
+Open the root project or `giwa-api`, select the shared **Midnight Demo** Spring
+Boot Run configuration, and Run. Frontend development remains the existing
+Vue/Vite command. Prerequisites are Java 17, Node 22 (22.21.1 recommended), and
+installed Docker Desktop when a local MySQL or native prover is absent. On
+macOS the runner starts the existing Docker.app if its daemon is stopped and
+waits up to 90 seconds. It does not install Docker or change permissions, and
+never stops Docker Desktop or unrelated containers. Linux and production keep
+the existing requirement for an available daemon when Docker is needed. The
+launcher can select an already installed nvm Node 22 when IntelliJ inherits a
+different system Node version, and discovers Docker's installed CLI even when
+the GUI application PATH omits it.
+
+Spring starts `scripts/midnight-demo.mjs --mode=helpers`. The runner prepares
+the isolated database, installs locked Node dependencies when needed, builds
+the existing workspaces, starts the prover, and starts the integrated gateway.
+No separate attestation, reader, bridge, node, or indexer terminal is required.
+The first run needs network access for images, packages, proof parameters, and
+Preview. Later runs reuse the local database and encrypted Midnight state.
+
+After Spring becomes healthy, `scripts/prepare-midnight-demo.mjs` prepares the
+approved synthetic demo accounts through the normal application APIs. In a fresh
+capped demo, create a new small receivable through the UI. If the dedicated DB
+already contains the exact historical GIWA #2 fixture, preparation retains its
+original amounts and verifies/restores its existing transaction receipts against
+RPC. It sends no new chain transaction. Repeated
+runs reuse matching records; conflicting accounts or receivables fail visibly
+without reset. `MIDNIGHT_DEMO_PREPARE_FIXTURE=false` skips this optional fixed
+fixture when a deployment already uses different prepared demo data.
+
+- Browser API / gateway: `http://127.0.0.1:18080`.
+- Spring private health: `http://127.0.0.1:18081/health`.
+- The shared Run configuration reserves ports 18080/18081 through environment
+  variables so the unrelated application already using 8080 remains available.
+- State: `.local/midnight-demo`, ignored by Git and Docker build context.
+- Owned local containers: `gasok-midnight-demo-mysql` and
+  `gasok-midnight-demo-prover`. Other containers, including Supabase, are not
+  managed. Stop terminates helper processes and containers started by that
+  runner; persistent volumes are retained.
+- Default local database: `127.0.0.1:3307/gasok_midnight_demo`, user `gasok_demo`,
+  disposable local-only password `gasok-demo-local-only`. The runner initializes
+  CREATE statements only after proving this dedicated database is empty. It
+  never runs the canonical schema's DROP statements.
+- Explicit `DB_*`, `MYSQL*`, or `SPRING_DATASOURCE_URL` variables mean use the
+  configured database; automatic database management is then disabled. Clear
+  old database variables in the Run configuration to use the isolated demo DB.
+- A new Preview wallet may require one-time faucet funding. The gateway reports
+  `funding_required` until usable funds are indexed. Do not present health as
+  proof readiness: deployment, Provider registration, and a real proof must
+  complete before claiming an end-to-end Preview demo.
+
+The runtime persists encrypted identity/private state and stable local keys.
+Keep the state directory across restarts. It writes only public network and
+contract address metadata to `deployment.json`; Spring reads that manifest and
+fails closed while the Preview contract is unavailable. Do not share the
+encrypted identity, storage password, or Spring capability key in logs or Git.
+
+### Railway: reuse the application and MySQL services
+
+Keep the existing Vercel project and the existing Railway project with **two
+services**: the integrated application and MySQL. No new application service
+is needed for attestation, reading, bridge, or proving. The root `Dockerfile`
+builds Java and the Node workspaces, copies the official prover's `/nix/store`
+closure, and starts the supervisor; Docker itself is not run inside Railway.
+
+The existing Railway application service uses this configuration:
+
+1. Build from the **GASOK root**, containing populated `giwa-api` and
+   `giwa-midnight` checkouts. Clear the old `/giwa-api` Root Directory and custom
+   build command. Use the root `Dockerfile` and explicitly set the service's
+   Start Command to `/app/scripts/midnight-container-entrypoint.sh`.
+   Sending `null` did not clear the earlier start-command override, so verify
+   this literal path in service settings before a new root upload. Configure
+   the service's actual Build/Deploy settings as described below.
+   A connection to the standalone `giwa-api` repository cannot supply the
+   sibling Midnight source; the root CLI upload below includes both checkouts.
+   The old standalone `giwa-api` repository's `main` source connection has
+   been disconnected. The official release path is now one root CLI upload
+   to the existing service, not a standalone-repository redeploy.
+2. Add one persistent volume mounted at `/data` on the application service.
+   It contains both encrypted demo state and downloaded proof parameters.
+   Set one replica in the service's Scale settings, in one region; the
+   wallet/private-state database has a single writer.
+3. Reuse the existing MySQL service's host, port, user, and password references
+   and preserve production `JWT_SECRET`. Select the separate
+   `gasok_midnight_demo` logical database for the integrated demo; the existing
+   `railway` database and its original tables are retained.
+   Set `CORS_ALLOWED_ORIGINS` and `MIDNIGHT_DEMO_ALLOWED_ORIGINS` to the exact
+   Vercel origin, comma-separated if multiple origins are required. Update the
+   frontend's API/gateway URL to the existing Railway public domain.
+4. Keep the image defaults: `SPRING_PROFILES_ACTIVE=midnight-demo`,
+   `MIDNIGHT_NETWORK_ID=preview`, `MIDNIGHT_DEMO_STATE_DIR=/data/midnight-demo`,
+   `MIDNIGHT_PROOF_SERVER_NUM_WORKERS=1`. Railway supplies `PORT`; Spring keeps
+   its distinct private port. Do not expose port 6300 or add a separate prover
+   public domain. Set the service's deployment Healthcheck Path to `/health`
+   and Healthcheck Timeout to 600 seconds (or set
+   `RAILWAY_HEALTHCHECK_TIMEOUT_SEC=600`).
+   It reports application availability separately from proof readiness;
+   `/ready` stays unavailable until contract and provider setup are complete.
+   Set `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=30` to allow the supervisor and
+   encrypted wallet checkpoint to finish after SIGTERM. Railway documents a
+   default of zero seconds; retain zero deployment overlap for this single
+   state volume. See the official [healthcheck settings](https://docs.railway.com/deployments/healthchecks)
+   and [runtime configuration variables](https://docs.railway.com/variables/reference).
+5. Preserve and back up `/data` alongside MySQL. A mounted volume couples state
+   to this single service and prevents multiple replicas; expect brief downtime
+   during redeployment. Changing the encrypted state keys breaks access to the
+   previous wallet/capability state.
+
+Do not rely on the root `railway.json` to apply these settings to this service.
+Railway now deprecates Config as Code: existing users of `railway.json` or
+`railway.toml` retain support only until 2026-12-01, and services that have not
+used it cannot newly opt in. The dashboard observed on 2026-09-15 gives
+2026-08-28 as the opt-in cutoff; this application's config-file path is unset.
+Set and verify the real service settings before upload. The optional successor
+is `.railway/railway.ts`, but it is not required for this existing service's
+manual settings plus CLI upload. See Railway's current
+[Config as Code notice](https://docs.railway.com/config-as-code).
+
+Railway CLI authentication is complete. For subsequent source releases, one
+upload from the root targets the existing application:
+
+```sh
+npx --yes @railway/cli@5.57.1 up . --project 51aaa2c8-0b42-41a4-9594-4245786f1a60 --environment b7530e23-f1a2-4da2-9320-e80ecada0268 --service 5ea692fe-4985-48e1-90a8-18c10f51d321 --path-as-root
+```
+
+The CLI command does not create a project or service, configure billing, mount
+the volume, or migrate a populated database. Existing schema changes still use
+the non-destructive migrations described below. The upload includes the current
+populated checkouts and respects Git ignore rules; do not add `--no-gitignore`.
+See the official [CLI upload reference](https://docs.railway.com/cli/up).
+
+Production demo verification on 2026-09-15: Railway deployment
+`35dbfd8b-2067-46a6-adcd-02b198c787d3` was built and uploaded from the GASOK
+root and runs the native prover, private Spring API on 8081, and public gateway
+through `/app/scripts/midnight-container-entrypoint.sh`. Railway and Vercel CLI
+authentication are complete. Project `elegant-recreation` still has exactly two
+services, the existing application and MySQL, with a 5 GB persistent application
+volume at `/data`. The earlier `migration_hold` deployment was used only while
+transferring the database and encrypted state.
+
+The `gasok_midnight_demo` logical database has been created and imported inside
+that existing MySQL service; the original `railway` database's seven tables are
+preserved. The encrypted wallet state has been restored to the application
+volume and its transferred file hashes verified. Private keys, passwords, and
+backup contents are not recorded here.
+
+The public API at `https://giwa-api-production.up.railway.app` returned
+`/health` with `status: UP`, `proofReady: true`, and `stage: ready`; `/ready`
+returned HTTP 200. The restored wallet kept Preview contract
+`bfb760db44f9ee7996ef12c47e56346903c654aede7d65c3c88110214c932a1e`.
+All three wallet SDK synchronization streams reported connected/ready with
+their applied indexes equal to their tips.
+
+Authenticated public requests and CORS for `https://giwa-ui.vercel.app` were
+verified. The migrated GIWA #2 receivable retained its Seller `COMPLETED` and
+Buyer `REQUESTED` proof requests. The completed request's public resolver
+returned the matching version-2 result: `eligible: true`, Provider 2,
+`profileAsOf: 1789452516`, and `validUntil: 1789535562`. These timestamps record
+the observed result; they are not an assertion of perpetual validity.
+
+The Railway native prover also passed both synthetic proof checks: `steady`
+produced `true` (5,755 bytes, 2,843 ms), and `stretched` produced `false`
+(5,757 bytes, 1,940 ms), exiting successfully. This check used an in-memory
+ledger and did not submit new transactions to Preview; it is distinct from
+the migrated on-chain proof and its successful hosted result resolution.
+
+Vercel deployment `dpl_8uWMXSTE1h7TWXYiJGKKBEuMrewX` is `READY` and has been
+promoted to the existing public [Midnight demo](https://giwa-ui.vercel.app).
+The public domain now serves the Midnight screen. Its 13 public API/GIWA/Midnight
+build values are saved in the existing project's Production environment and
+verified to match, so later deployments retain the same configuration. No new
+frontend project or Git push was needed. The public browser check passed:
+`/login` → the verification-requester demo login → `/midnight` showed ready
+status and both migrated requests; opening the Seller's public result showed
+the criteria satisfied, issued at `2026-09-15 15:08:36` and valid until
+`2026-09-16 14:12:42` (KST), matching the resolved values above.
+
+A new public-domain wallet-consent → Preview transaction flow was not repeated
+after migration. A new subject proof still requires the owner to allow the
+domain in MetaMask and sign the new request with the subject wallet.
+
+### Packaging checks
+
+```sh
+node --test scripts/midnight-demo.test.mjs
+docker buildx build --platform linux/amd64 --load -t gasok-midnight-demo:railway-current .
+```
+
+The first command checks database ownership, non-destructive initialization,
+port isolation, allowed network/prover configuration, and bounded macOS Docker
+startup without installing software or changing existing containers. The image build
+compiles both applications and executes the copied prover's `--help`, verifying
+that its executable loader/dependencies survived composition. A successful
+image build alone does not establish a funded Preview wallet or successful
+on-chain proof; record those separately after runtime initialization.
+
+Local packaging evidence on 2026-09-15: all 10 runner tests passed; complete
+Linux ARM64 and AMD64 images built successfully. The copied native AMD64 prover
+answered `/version` with `8.1.0`, and the AMD64 compiled hosted bootstrap
+imported successfully. An isolated integrated ARM64 container started the native
+prover, Spring, fixture preparation, and gateway. It returned `/health` 200 with
+`proofReady:false`, and `/ready` 503 during wallet synchronization. Repeated
+fixture preparation preserved counts of 3 companies, 3 users, 3 wallets,
+1 receivable, and 3 transaction records. SIGTERM completed with exit 0; the
+temporary smoke container was removed and the shared demo database was retained.
+
+Recorded local image IDs (not deployed to Railway):
+
+```text
+arm64 sha256:dec7ffc715b95e01d883abfe71a3dff1ed0bbe488360cd51e8193c624ce81e3e
+amd64 sha256:43c28473a0e460c6cadba73bcc34cab536196d4eadd57f65c471e3f57ae3ebad
+```
+
+These smoke images precede the later macOS-only automatic Docker Desktop
+startup addition; that code path was verified with a simulated command runner and
+read-only reuse of the already-running daemon.
+
+Final packaging gate on 2026-09-15 at 15:13 KST: the latest Linux AMD64 image
+`gasok-midnight-demo:railway-current` built successfully with image ID:
+
+```text
+sha256:26980d97c3e0229340e525da68b5bd957cd73bb3101d4df7e319604674d9460a
+```
+
+All 10 runner tests passed again. Six key source hashes match between this
+image and the current checkout: SDK API, hosted bootstrap/gateway/wallet,
+runtime supervisor, and fixture preparation. The image includes the built
+wallet module, Spring JAR, and native prover; known local state and environment
+paths are absent. This is a local build and isolated file inspection, not a
+new Railway deployment or a new integrated runtime/E2E result. The funded local
+demo, database, and prover were not restarted for this packaging gate.
+
+## Historical Midnight v2 Local Deployment
 
 Midnight remains local-only on network `undeployed`; it is not deployed to
 Preprod/Mainnet, Railway, or Vercel. The current v2 contract is:
@@ -52,7 +339,7 @@ A fresh end-to-end v2 browser run through MetaMask, Spring `SUBMITTED`, Bridge
 ACK, Funder resolve, and `COMPLETED` has not yet been recorded after the final
 outbox changes, so deployment readiness must not claim that live evidence yet.
 
-## Current Status
+## Historical GIWA deployment status
 
 - Target network: GIWA Sepolia.
 - Local Hardhat compilation passes with Solidity `0.8.24+commit.e11b9ed9`,
@@ -402,7 +689,7 @@ Apple touch icon, and social preview assets in the Vite public directory. The
 canonical and social metadata currently target `https://giwa-ui.vercel.app`;
 update them together if the production domain changes.
 
-## Railway Backend
+## Standalone GIWA backend deployment
 
 Railway uses `giwa-api/Dockerfile`, which provides both the Java 17 compiler and
 runtime. Do not keep a custom Railpack build command such as `./gradlew bootJar`;

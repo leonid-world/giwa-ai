@@ -1,3 +1,36 @@
+## Approved integrated synthetic demo — ADR-023, 2026-09-15
+
+This section supersedes the local-only runtime boundary in the historical
+sections below. The owner explicitly approved Preview and a hosted hackathon demo.
+
+```text
+Vercel Vue -> authenticated Node gateway (one Railway public port)
+                |-> public business API -> private Spring :8081 -> MySQL
+                |-> profile ID + request ID -> synthetic fixture + Proof Bridge
+                |     -> fictional Attestation Provider -> native Proof Server
+                |     -> public Preview Node / Indexer
+                |-> internal result reader -> Spring independent verification
+```
+
+All Node roles, Spring and the native prover share one app deployment; MySQL
+retains its separate service and volume. IntelliJ's `Midnight Demo` Run starts
+Spring and its helper supervisor automatically. In Railway the same supervisor
+owns Spring and the helpers. One persistent app directory retains wallet,
+provider identity, encrypted private state, outbox, session ownership and the
+public deployment manifest across restarts. Do not regenerate keys on redeploy.
+
+The gateway authenticates every proof action through Spring's internal authority
+endpoint and binds request/session ownership. Raw financial input is rejected by
+the hosted challenge: it accepts only a selected synthetic profile. Spring sees
+public request context, not financial witness bodies. Existing result verification,
+capability encryption, owner-only delivery and no-duplicate-proof recovery remain.
+The operator processes synthetic data, including temporary encrypted witness
+storage. The fictional Provider does not establish real-world financial truth.
+
+Preview wallet funding, DUST generation, contract initialization and actual
+browser E2E must be verified; build/tests alone are not live demo evidence.
+See CONTEXT.md for the latest achieved and outstanding verification.
+
 # Architecture
 
 ## Current Midnight v2 Request-Bound Architecture

@@ -1,3 +1,10 @@
+# Historical Midnight learning notes
+
+The implementation workspace is `giwa-midnight/`. These are historical local
+PoC notes. The owner's 2026-09-15 approval in the root AGENTS.md and ADR-023
+supersedes local-only execution restrictions for the integrated synthetic Preview
+demo. Do not add a second implementation in this legacy directory.
+
 # Midnight Workspace Instructions
 
 This workspace is a local-only Midnight ZKP proof-of-concept.

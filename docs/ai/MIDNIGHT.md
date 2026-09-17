@@ -1,3 +1,13 @@
+## Current hosted-demo approval — 2026-09-15
+
+The owner approved ADR-023: a synthetic hackathon demo on Preview, one IntelliJ
+Run and one integrated Railway app deployment, with the existing MySQL and Vercel.
+This supersedes the local-only execution requirements below, while preserving
+Compact verification, mock disclosure, GIWA transaction ownership and the ban on
+Preprod/Mainnet. See ARCHITECTURE.md and DEPLOYMENT.md for the current runtime.
+Historical success records below do not establish that this new hosted setup has
+completed a live proof. Current verification and blockers belong in CONTEXT.md.
+
 # GASOK Midnight PoC
 
 ## Current Protocol: Funder Request-Bound v2

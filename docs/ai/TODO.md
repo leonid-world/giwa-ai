@@ -1,5 +1,233 @@
 # TODO
 
+## 전체 소스 커밋·푸시·배포 — 2026-09-17 후속 요청
+
+- [x] 루트와 각 저장소의 공개 대상 변경·원격 브랜치 상태 확인.
+  실제 지갑 상태/비밀값은 제외하고 소스·공개 설정·테스트·문서를 보존.
+- [ ] UI·API·Midnight의 변경을 `giwa-midnight`에 커밋·푸시하고 루트에서
+  정확한 서브모듈 커밋을 기록하여 푸시.
+- [ ] 게시된 커밋으로 기존 Vercel·Railway 배포 완료, 공개 로그인/금액 정책/
+  증명 준비 상태 및 작업 트리·원격 커밋 일치 확인.
+- 계약 저장소는 변경 없음. 기존 저장소/브랜치 체계를 사용하며 제출 직전
+  새 단일 저장소·Vercel 주소 전환은 별도 TODO로 보류한다.
+
+## MidProof 브랜딩·소액 데모 — 2026-09-17 사용자 지정
+
+- [x] 프로젝트 표시 이름을 **MidProof**로 확정. 자체 M 심볼·로고·SVG/ICO/PNG
+  파비콘·Apple 아이콘·공유 이미지·탭 제목·프로젝트 설명과 민트/청록 테마 적용.
+- [x] 각 페이지 설명과 단계 안내 축소. 가상 기관/재무값·실제 ZK·운영 서버의
+  가상 원문 처리·동의 범위·미충족/오류/거절/만료 구분은 유지.
+- [x] 신규 데모 채권을 정수 **1~10,000 mKRW**, 펀딩을 채권액 이하로 제한.
+  기본 채권 **1,000**, 펀딩 **900**; 상환은 채권 원금 전액. 인증된 서버
+  금액 정책을 화면과 서명 직전에 다시 조회하며 조회 실패 시 새 거래 차단.
+- [x] 금액 문자열/BigInt로 정밀도 유지. 소수·과대 금액·펀딩>채권 차단,
+  늦은 채권 조회가 선택/Buyer 동의를 덮어쓰는 경쟁 조건 회귀 검증.
+- [x] 기존 거액 채권 금액·영수증 보존. UI에서 새 고액 펀딩을 막고,
+  이미 펀딩된 기존 채무는 전액 상환/복구 유지. 기존 Solidity 변경 없음.
+- [x] 초기 빈 데모는 1조짜리 과거 채권을 새로 등록하지 않고 계정만 준비;
+  새 소액 채권은 UI로 발행. 기존 과거 채권의 검증/복구는 유지.
+- [x] Vue 205 tests + production build + ESLint/Oxlint, Spring 금액/거래
+  회귀 41 tests, 초기 준비/runner 14 tests, hosted gateway 19 tests + CLI build.
+- [x] 기존 Vercel·Railway에 반영한 버전에서 브랜딩·소액 입력·서버 정책·
+  준비 상태를 실제 브라우저/API로 확인. 공개 자산 해시 일치, 초기값·초과/소수/
+  펀딩>액면 차단, 만료 표시와 고액 신규 펀딩 차단 확인. 최종 배포 ID는 CONTEXT 기록.
+- [ ] 새 소액 채권의 Seller 발행→Buyer 확인→NFT→Funder 펀딩→Buyer 상환
+  실제 지갑 리허설. 테스트·빌드 통과를 새 체인 거래 성공으로 기록하지 않기.
+
+저장소·Vercel 이름/주소 전환은 기존 제출 직전 작업으로 계속 보류한다.
+
+## 제출 직전 후속 작업 — 2026-09-15 사용자 지정
+
+- [x] AGENTS.md에 최종 제출·제출 준비·제출 링크 정리 요청 시 체크리스트와
+  미완료 TODO를 먼저 읽고 사용자에게 상기시키는 규칙 추가.
+- [x] 이 대화에 예약 알림 `midnight` 생성: 2026-09-24~27 매일 20:00
+  한국시간. 미완료 작업을 알리며, 완료/제출 완료/중지 요청 시 알림 중지.
+  컴퓨터와 Codex 앱이 실행 중이어야 로컬 문서를 확인할 수 있음.
+- [ ] 기능 작업을 몇 가지 더 진행한 후, 최종 제출 준비 단계에서
+  [저장소·공개 주소 정리 체크리스트](MIDNIGHT_RELEASE_CHECKLIST.md)를 실행.
+  새 Midnight 단일 공개 저장소와 `main` 제출 버전, Vercel 이름/주소 정리,
+  새 클론 빌드와 공개 데모 재검증을 함께 진행한다. 실제 전환 작업은 보류하며
+  상기 규칙과 예약 알림의 설정만 완료했다.
+
+## 통합 실행·배포 데모 — 2026-09-15 사용자 승인
+
+- [x] AGENTS.md의 local-only 경계를 가상 데이터 Preview 데모로 변경하고 ADR-023 기록.
+- [x] IntelliJ `Midnight Demo` 한 번 Run으로 전용 MySQL·실제 Prover·Node 역할을 자동 시작.
+- [x] 별도 Node/Indexer 운영을 공용 Preview 연결로 대체.
+- [x] 기존 Railway 앱 하나에 Spring·가상 Attestation·Bridge·Read API·native Prover 패키징.
+  기존 MySQL과 Vercel은 유지하며 추가 앱 서비스는 만들지 않음.
+- [x] 정상 API를 통한 가상 계정 3개·테스트 채권 자동 준비 및 재실행 중복 없음 검증.
+- [x] 프론트 데모 역할 로그인 버튼·가상 재무 시나리오·준비 상태·호스팅 인증 연결.
+- [x] SDK 4.1.1 / 실제 Proof Server 8.1.0에서 가상 두 시나리오의 Compact ZK 증명 생성.
+  `steady=true`, `stretched=false`; 메모리 ledger의 회로/증명 검사이며 체인 E2E와 구분.
+- [x] Spring 96 tests, Vue 148 tests, Midnight CLI 186 pass/1 skip,
+  Attestation 88 tests, Read API 61 tests 및 실제 Linux 통합 이미지 기동 확인.
+- [x] 로컬 Preview 지갑의 무료 5,000 tNight 지급 및 공개 Indexer UTXO 입금 확인.
+- [x] 공용 Preview 지갑 동기화·DUST 등록·계약 배포·Provider 2 등록 완료 확인.
+  실제 `/ready` 200 및 프론트 준비 완료 표시 확인.
+- [x] 브라우저 Funder 요청 2건 생성, Seller 수신함·가상 시나리오 선택·
+  인증된 실제 challenge 발급과 MetaMask 동의 단계 도달 확인.
+- [x] 암호화된 SDK 지갑 상태 저장·복원으로 동기화 진행점 유지 검증.
+  거래 finalization 실패 시 코인 예약 해제 및 이전 정상 저장본 보존 회귀 포함.
+- [x] 자금이 있는 실제 데모 지갑 재실행: 기존 계약·기관·요청 유지,
+  최초 전체 동기화 약 9분에서 저장본 복원 후 27초 내 ready 확인(현재 Mac 관찰).
+- [x] Seller 브라우저 실제 요청→사용자 MetaMask 동의→증명→Preview 기록→
+  Spring 제출·Bridge ACK→Funder 응답 완료/기준 충족 표시까지 검증.
+  2026-09-15 15:08:36 KST 발급, 공개 원장 `verifyEligibility` SUCCESS,
+  block 872472, Provider 2 / evaluationVersion 2 / `eligible=true` 1건 확인.
+  tx hash: `7dd331347d83750908c10863242206dda8d799337015e2d1c6a7d48cab2385cd`.
+- [ ] Buyer 경로 및 기준 미충족 `false`의 실제 브라우저·체인 리허설.
+- [x] 사용자의 Railway 재활성화 후 기존 앱/MySQL Online 및 공개 `/health` UP 확인.
+- [x] Railway/Vercel CLI 인증 완료, 기존 Railway 앱에 `/data` 볼륨과
+  환경변수를 설정하고 루트 통합 이미지를 실제 배포.
+  기존 MySQL 안의 새 `gasok_midnight_demo` DB에 8개 테이블을 이관하고
+  모든 행·암호문·스키마 일치 확인. 기존 `railway` DB는 보존.
+  지갑 암호화 상태도 복원하여 같은 지갑·계약·기관을 유지하고 `/ready` 200 확인.
+- [x] Railway 실제 Proof Server에서 충족/미충족 두 가상 시나리오의 증명 생성.
+  5,755/5,757 bytes, 2.84/1.94초; 메모리 상태 검사이며 새로운 체인 제출은 아님.
+- [x] Vercel 최신 빌드를 기존 공개 주소로 승격하고 Production 공개 설정 13개 유지.
+  공개 API의 로그인·CORS·기존 채권·요청 조회 및 이관한 Seller 결과의
+  복호화→Preview 재조회에서 `eligible=true`와 기존 발급/만료 시간 일치 확인.
+- [x] 실제 공개 브라우저에서 검증 요청자 로그인 버튼→요청함→공개 결과 확인:
+  데모 준비 완료·Seller 응답 완료·요청 기준 충족과 원래 발급/만료 시각 표시.
+- [ ] 공개 배포에서 Buyer의 실제 MetaMask 동의→체인 제출 리허설.
+
+운영 방법은 루트 README와 [DEPLOYMENT.md](DEPLOYMENT.md)를 따른다.
+아래 과거 기록의 local-only/프론트만 수정 범위는 당시 작업 기록이다.
+현재 과업은 승인된 통합 구현이며 실제 은행 검증·Mainnet 운영을 목표로 하지 않는다.
+
+## Midnight 전용 화면 문구 정리 — 2026-09-12 후속 지시
+
+- [x] GASOK/GIWA 화면 브랜드·푸터·SEO·OG 문구 제거, Midnight 단독 표기 적용.
+- [x] 채권/검증/진행/오류 안내를 중립적인 거래망 표현으로 교체.
+- [x] 과거 배포 도메인과 sitemap 제거, 공유 이미지 재생성.
+- [x] 후속 변경 후 141개 테스트·빌드·ESLint/Oxlint 통과, 로그인 및 11개 라우트
+  표시 문구에 이전 브랜드 없음 확인(백엔드 미연결 상태).
+- [x] 로컬 검증 파일 다운로드명을 `midnight-proof.json`으로 변경; 이전 파일 호환 유지.
+- [ ] 새 배포 도메인 확정 후 absolute OG/Twitter URL 및 sitemap 생성.
+- 서명 domain/type/purpose와 wire schema는 백엔드 변경 금지 범위로 유지.
+  화면 브랜딩 변경이 코드 신규성·재사용 적격성 또는 실제 거래망 변경을 뜻하지 않음.
+
+
+## Midnight 화면 브랜딩 — 2026-09-12
+
+- [x] 프론트만 GASOK · Midnight 브랜딩과 다크/블루 테마로 전환.
+- [x] 로그인/회원가입, 공통 헤더/푸터, 대시보드, 404, 채권/펀딩/상환/프로필,
+  Midnight v2 및 legacy 화면의 색상과 상태 대비 점검.
+- [x] 공식 흰색 SVG 로고 로컬 적용, SVG/ICO/PNG 파비콘·Apple 아이콘·OG/Twitter
+  썸네일과 SEO 메타데이터 교체. 기존 이미지 URL 호환 유지.
+- [x] Node 24.19.0 프로덕션 빌드, 기존 141개 테스트, ESLint/Oxlint 통과.
+- [x] 320px 전체 라우트 가로 넘침 없음, 375px 로그인/회원가입 및 OG 이미지 시각 확인.
+- [ ] 새 배포 도메인이 확정되면 canonical/OG URL과 robots/sitemap origin을
+  함께 갱신. 후속 지시로 과거 origin은 제거됨; 새 도메인 확정 대기.
+- [ ] 백엔드 가용 상태에서 데이터가 있는 화면과 실제 v2 증명 E2E 재검증.
+  이번 범위는 화면 수정이며 API/Proof Server를 실행·수정하지 않았음.
+
+
+## Midnight 최종 제출 — 심사 재현성과 동작하는 데모 (2026-09-10)
+
+안내·출처: [MIDNIGHT_HACKATHON_SUBMISSION.md](MIDNIGHT_HACKATHON_SUBMISSION.md).
+마감: **2026-09-28 00:00 KST (9월 27일 밤까지)**.
+최종 완료 기준은 심사자가 공개 소스를 클론·빌드하고 Midnight 핵심 흐름을
+재현할 수 있으며 실제 데모와 구현 근거로 질문에 답할 수 있는 상태다.
+아래 체크는 해당 검증 근거가 확보된 뒤에만 완료로 바꾼다.
+
+### 1. 참가 자격과 이전 프로젝트 대비 기여
+
+- [x] Luma 참가 등록 완료 — 2026-09-10 사용자 확인.
+- [x] 공식 안내와 실제 Tally 제출 폼 조사 및 하네스 참고 문서 연결.
+- [ ] 이전 GASOK 제출 기준 커밋/기능, 이미 존재한 Midnight 구현, 이번 대회
+  기간의 신규 변경을 비교표로 정리하고 관련 코드·커밋·데모 근거 연결.
+- [ ] 기존 코드/이전 대회 제출물 재사용 규정과 작업 기간 기준 확인.
+  필요 시 주최 측에 위 이력을 설명해 확인하고 답변 출처·날짜 기록.
+  새 저장소 생성만으로 재사용 문제를 해결했다고 간주하지 않기.
+- [ ] 이번 제출의 핵심 문제와 Midnight 기여를 한 줄 설명으로 확정하고,
+  실제 구현을 기준으로 이전 GASOK과 차별점 및 한계 정리.
+
+### 2. Midnight 제출용 새 공개 저장소 준비
+
+실행 시점: 다른 기능 작업 후 최종 제출 전. 상세 순서와 도메인 전환은
+[후속 체크리스트](MIDNIGHT_RELEASE_CHECKLIST.md)를 따른다.
+
+- [ ] 새 저장소 이름·소유자·포함 소스/이력 범위를 확정하고, 필요한 소스를
+  일반 폴더로 담는 단일 공개 저장소를 준비. 기존 GASOK 제출 기준과
+  출처·라이선스·기여 이력 보존. 새 저장소의 `main`을 제출 버전으로 사용.
+- [ ] 공개할 파일과 이력을 점검하고 비밀키·seed·환경 비밀값·private state·
+  실제 재무 원문·민감 capability가 포함되지 않는 제출 소스 준비.
+- [ ] 확정한 범위로 새 공개 저장소 생성·게시하고 실제 제출 URL 기록.
+- [ ] 비로그인 일반 클론으로 네 내부 구성요소의 필수 소스까지 모두 확보되는지
+  확인. 현재 루트의 서브모듈 링크만 복사하여 코드가 누락되는 상태 방지.
+- [ ] GitHub About 설명과 `midnightntwrk` 토픽 설정.
+
+### 3. 심사자 환경에서 빌드·실행 재현 (최우선)
+
+- [ ] 제출 커밋의 새 클론에서 의존성 설치와 Compact/CLI/API/Vue/Spring의
+  해당 빌드·필수 테스트 실행. 결과·도구 버전·검증 커밋 기록.
+- [ ] README에 설치/실행 명령, 환경변수 예시, DB 준비, Local Devnet,
+  로컬 계약 배포·Provider 등록, 서비스 시작 순서와 상태 확인 방법 작성.
+- [ ] 작성자 PC의 ignored 데이터 없이 새 로컬 상태·지갑을 준비하는 절차와
+  GIWA 테스트넷/RPC·채권·역할 지갑·데모 자금 등 외부 의존성 검증.
+- [ ] 공식 예제→GASOK CLI의 기존 검증 이력을 확인하고 현재 제출 코드의
+  CLI proof 흐름을 재검증한 뒤 Vue v2 E2E 진행. 과거 성공 기록으로 대체하지 않기.
+- [ ] 심사자 관점으로 README만 따라 새 클론에서 핵심 흐름을 재현하고,
+  누락된 파일/명령/설정과 실행 시간·문제 해결 안내 보완.
+
+### 4. 실제 v2 데모와 증거 확보 (최우선)
+
+- [ ] 데모 계정과 Seller/Buyer/Funder 역할, 채권, mock 입력 시나리오 준비.
+- [x] Funder 기준 요청 → Seller 검토·사용자 MetaMask 동의 → mock attestation →
+  ZK proof → Midnight 기록 → Spring SUBMITTED/Bridge ACK → Funder
+  resolve/COMPLETED까지 실제 브라우저에서 검증하고 실행 증거 기록.
+  2026-09-15 Preview block 872472의 `verifyEligibility` SUCCESS와
+  Provider 2 / `eligible=true` 결과를 공개 Indexer에서 독립 대조함.
+  Buyer 경로는 별도 미검증.
+- [ ] 기준 충족 `true`와 유효한 기준 미충족 `false`를 보여주고, 거절·만료·
+  proof 오류는 기준 미충족과 다름을 화면/설명에서 확인.
+- [ ] Indexer 지연 시 proof 재제출 없이 조회 재시도, ACK 전 중단 시 같은
+  결과 복구 등 구현된 복구 동작을 확인하고 데모 장애 대응 절차 작성.
+- [ ] 공개 결과와 비공개 입력의 경계를 코드/ledger/저장 경로로 설명할
+  증거 준비. mock의 한계와 로컬 Proof Server 신뢰 범위를 과장하지 않기.
+- [ ] 제출 직전 서비스 재시작부터 전체 데모를 다시 리허설하고 소요 시간,
+  필요한 초기 상태, 안전한 재실행 방법과 실패 시 복구 순서 기록.
+
+### 5. 심사 설명·제출 자료·최종 접수
+
+- [ ] README에 프로젝트 소개, 이전 작업 대비 기여, Compact 증명 조건,
+  공개/비공개 데이터, GIWA와 Midnight 역할, 실행/데모 플로우와 한계 정리.
+- [ ] 핵심 흐름이 실제 동작하는 데모 영상 제작·게시(3분 이내 권장).
+  긴 증명 대기를 편집하면 표시하고 원본 실행 근거 보존.
+- [ ] Google Slides Deck 준비: 문제, Midnight 필요성, 기여, 아키텍처,
+  데모 결과, 한계. README/폼/영상 설명과 일치시키기.
+- [ ] 프로젝트명·로고·썸네일·소개 화면을 확정한 Midnight 제출 메시지에 맞춤.
+  기능과 심사 재현성을 먼저 확보하고 외형 변경만을 신규 기여로 제시하지 않기.
+- [ ] 선택 데모 URL의 제공 여부 결정. Local Devnet 재현·영상 경로를 명시하고
+  URL을 위해 loopback 서비스를 외부 노출하거나 Midnight 배포 범위를 확대하지 않기.
+- [ ] Academy Explorer/Scholar 수료증이 있으면 제출 준비(각 1점, 최대 2점).
+- [ ] 필수 팀/연락처/소개/구현 포인트를 Tally 폼용으로 준비하고 공식 폼의
+  최신 요구사항·마감·제출 후 수정 조건 재확인.
+- [ ] 비로그인 상태에서 GitHub와 영상·Deck 공유 링크 접근 확인. 심사
+  설명마다 코드/테스트/실행 근거 연결, 제출 커밋 확정.
+- [ ] 마감 전에 최종 폼 제출 후 접수 확인 화면/메일 등 제출 증거와
+  제출 시각·저장소 URL·커밋·자료 링크 기록. 폼 작성만으로 완료 처리하지 않기.
+
+## Midnight hackathon preparation — 2026-09-04
+
+- [x] Preserve root `main` as the previous GASOK submission baseline.
+- [x] Diagnose the empty Midnight directory as an uninitialized submodule.
+- [x] Restore `giwa-midnight/` at root-pinned `aa02835` and create its local
+  `giwa-midnight` branch from the identical `main`, preserving source/history.
+- [x] Confirm root and all four inner repositories use `giwa-midnight`, all
+  gitlinks match, and inner Git integrity/source equality checks pass.
+- [x] Document independent root/submodule branch handling in CONTEXT.md.
+- [ ] Install Midnight workspace dependencies and rerun CLI build; the branch
+  restoration build attempt stopped at missing `tsc` (no `node_modules`).
+- [ ] Separately publish the local inner Midnight branch when requested.
+- [ ] Confirm existing-code reuse eligibility; prepare a new public submission
+  repository per the owner's 2026-09-10 direction. See the final checklist above
+  for pending repository scope and publication work.
+- [x] Update visible branding, thumbnails, logo, SEO, and GIWA-centered UI for
+  the Midnight submission (2026-09-12, presentation only; architecture unchanged).
+
 ## Done
 
 [x] PoC

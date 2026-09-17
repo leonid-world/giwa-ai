@@ -1006,3 +1006,41 @@ Compact correctly prevents the same request from being proved again. Persist
 before exposure, recover by the already-bound request, and delete only after a
 durable recipient ACK closes that delivery gap without exposing JSON to users
 or introducing unsafe proof retries.
+
+
+## ADR-023 — Integrated synthetic Midnight hackathon demo
+
+Date: 2026-09-15. Status: owner-approved; implementation and live verification
+are tracked separately in CONTEXT.md and TODO.md.
+
+The owner explicitly approved removing local-only restrictions for a synthetic
+Preview demo. The user operates one IntelliJ Spring Run locally, and deploys one
+integrated backend application to the existing Railway project. Vercel and the
+existing separate MySQL service remain. No independent Attestation, Read API,
+Bridge or Proof Server service/project is required. Node/Indexer use public
+Preview endpoints. Preprod and Mainnet are still out of scope.
+
+A Node gateway owns the public port; Spring is private. Ordinary business calls
+are proxied to Spring, while proof requests remain in Node. The gateway uses an
+internal-token-protected Spring endpoint and the user's JWT to authorize exact
+request/session actions. Hosted challenges accept named synthetic fixtures only,
+not caller-supplied financial values. The existing fictional Attestation Provider,
+Compact signature/policy evaluation, MetaMask role consent, outbox, encrypted
+capability delivery and Spring's independent result verification are reused.
+
+The process supervisor manages startup/build/bootstrap and shutdown. A native
+prover is bundled in the Railway image; on macOS its official Docker image can
+be started automatically. A dedicated local demo MySQL may be created when no
+DB is configured, without resetting any existing database. A persistent app
+volume retains generated demo identities and encrypted state. Re-deployment
+must not replace that identity or replay completed proof transactions.
+
+The operator and hosting environment process synthetic witness data. The demo
+does not promise that data never leaves the browser or is hidden from the
+operator, and the mock institution never represents a bank/accounting source.
+Existing GIWA funding/repayment and Vue are preserved. Production operations,
+multiple instances, real financial ingestion and a new wallet architecture are
+not part of the hackathon target.
+
+Reason: minimize the owner's execution and deployment tasks, reuse the proven
+v2 modules, and present a working UI-driven actual-ZK demo without new platforms.

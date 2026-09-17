@@ -1,3 +1,22 @@
+## Current project identity — 2026-09-17
+
+The owner named the Midnight hackathon project **MidProof**. This is an application
+using Midnight proofs and the existing GASOK/GIWA receivable foundation. UI assets
+are original MidProof branding; the protocol/network is still named Midnight.
+New demo receivables are small integer mKRW transactions (max 10,000; default
+face 1,000/funding 900). Repository and public domain migration is deferred to the
+submission checklist; do not infer repo names or originality from the new brand.
+
+## Current owner-approved hackathon target — 2026-09-15
+
+The owner approved the integrated synthetic Midnight demo (ADR-023), superseding
+local-only execution restrictions below. One IntelliJ **Midnight Demo** Run
+starts the backend and helpers; one existing Railway app contains them with the
+existing separate MySQL service. Vercel remains the frontend. Public Midnight
+Preview replaces self-operated Node/Indexer. Preprod/Mainnet remain prohibited.
+The owner wants UI operation, not source-level learning or production operations.
+Existing GIWA funding/repayment behavior remains separate and unchanged.
+
 # MOST IMPORTANT
 
 Midnight PoC가 production scope가 아니라는 점
