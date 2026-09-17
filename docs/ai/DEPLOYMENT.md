@@ -1,5 +1,25 @@
 # Deployment
 
+## Free public domain — 2026-09-17
+
+The public frontend origin is `https://midproof.vercel.app`. The existing Vercel
+project is named `midproof` (same project ID); its existing `leonid-world/giwa-ui`
+Git connection now uses `giwa-midnight` for Production. Preserve the 13 existing
+Production variables, Vite build and Node 24 settings. A Git repository move or
+paid domain is not needed for this address. The mistaken `midproof.app` project
+association was removed.
+
+Both Railway `CORS_ALLOWED_ORIGINS` and `MIDNIGHT_DEMO_ALLOWED_ORIGINS` use
+`https://giwa-ui.vercel.app,https://midproof.vercel.app` during the transition.
+Apply them together and restart/redeploy the existing integrated app once.
+Keep the same `/data` volume, MySQL, single-writer settings and API domain.
+Only a real new-Origin API response verifies this change; health alone does not.
+The final old-domain redirect is 307 to the new domain. Vercel Git Production
+deployment `dpl_CeMWG13gaYzBCn72ko5cRTcLhnUw` serves UI commit `d223f0a`;
+Railway configuration redeploy `3efba8fd-5d3f-4b5a-bd4f-60bfda3f4727` reuses
+the previous runtime image. New-origin API checks, public assets and Chrome
+Seller login/request reads pass; full evidence is recorded in CONTEXT.md.
+
 ## Published MidProof release — 2026-09-17
 
 Root code commit `00a409d568cca4f06e013ef30cc0bc507673c31b` and all four pinned

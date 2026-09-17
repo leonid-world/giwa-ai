@@ -11,7 +11,13 @@ for exact BigInt validation; no floating-point conversion. New issuance/funding
 fails closed before wallet interaction on policy failure or cap violation. Existing
 receipt recovery and already-funded repayment retain full historical amounts.
 List selection uses request ordering so late responses cannot change Buyer consent.
-Vue 205 tests, production build, ESLint and Oxlint passed. Domain migration is deferred.
+Vue 205 tests, production build, ESLint and Oxlint passed for the feature release.
+The subsequent domain update uses `https://midproof.vercel.app/` for canonical,
+Open Graph and Twitter URLs. The sitemap contains only the public entry URL;
+robots allows the entry/login page and required static assets. API URLs and
+wallet protocols are unchanged. New-origin login/MetaMask permission must be
+established again; browser-local pending transaction records do not migrate.
+Final domain deployment verification is recorded in CONTEXT.md.
 
 ## Integrated hackathon demo — 2026-09-15
 

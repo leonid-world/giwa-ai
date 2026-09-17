@@ -1,5 +1,20 @@
 # TODO
 
+## 무료 MidProof 주소 전환 — 2026-09-17 사용자 승인
+
+- [x] `midproof.vercel.app` 사용 가능 여부 확인 및 기존 Vercel 프로젝트 연결.
+  프로젝트 ID·환경변수 13개·기존 Git 저장소를 유지하고 표시 이름을 `midproof`로 변경.
+- [x] 잘못 추가한 `midproof.app` 프로젝트 연결 제거. 도메인 구매 없음.
+- [x] Vercel Production 자동배포 브랜치를 `main`에서 `giwa-midnight`로 변경·재조회 확인.
+- [x] Railway의 두 Origin 설정에 새 주소 추가 후 기존 통합 앱 재배포 및 실제 요청 검증.
+  `3efba8fd-5d3f-4b5a-bd4f-60bfda3f4727` SUCCESS, 기존 이미지·볼륨 유지.
+- [x] 공유·검색 URL과 공개 진입 sitemap, README·문서 반영; UI `d223f0a`의
+  Git Production 자동배포 `dpl_CeMWG13gaYzBCn72ko5cRTcLhnUw` READY 확인.
+- [x] 이전 주소를 새 주소로 307 연결. 새 주소 Chrome Seller 로그인·기존 요청 조회·증명 준비 확인.
+- [x] 새 사이트 MetaMask에서 기존 Seller `0x6060…b4361` 선택 결과를 확인하고
+  같은 회사 지갑 연결 완료 메시지 확인. 새 거래·증명 서명 없음.
+- 제출용 단일 저장소 준비와 실제 새 증명/채권 거래 리허설은 별도 미완료 항목으로 유지.
+
 ## 전체 소스 커밋·푸시·배포 — 2026-09-17 후속 요청
 
 - [x] 루트와 각 저장소의 공개 대상 변경·원격 브랜치 상태 확인.
@@ -37,7 +52,7 @@
 - [ ] 새 소액 채권의 Seller 발행→Buyer 확인→NFT→Funder 펀딩→Buyer 상환
   실제 지갑 리허설. 테스트·빌드 통과를 새 체인 거래 성공으로 기록하지 않기.
 
-저장소·Vercel 이름/주소 전환은 기존 제출 직전 작업으로 계속 보류한다.
+저장소 통합은 제출 직전 작업으로 계속 보류한다. Vercel 이름/주소는 위 별도 승인에 따라 전환한다.
 
 ## 제출 직전 후속 작업 — 2026-09-15 사용자 지정
 
@@ -107,7 +122,8 @@
 - [x] 후속 변경 후 141개 테스트·빌드·ESLint/Oxlint 통과, 로그인 및 11개 라우트
   표시 문구에 이전 브랜드 없음 확인(백엔드 미연결 상태).
 - [x] 로컬 검증 파일 다운로드명을 `midnight-proof.json`으로 변경; 이전 파일 호환 유지.
-- [ ] 새 배포 도메인 확정 후 absolute OG/Twitter URL 및 sitemap 생성.
+- [x] 새 배포 도메인 확정 후 absolute OG/Twitter URL 및 sitemap 생성.
+  2026-09-17 `midproof.vercel.app`으로 반영·공개 파일 검증.
 - 서명 domain/type/purpose와 wire schema는 백엔드 변경 금지 범위로 유지.
   화면 브랜딩 변경이 코드 신규성·재사용 적격성 또는 실제 거래망 변경을 뜻하지 않음.
 
@@ -121,8 +137,8 @@
   썸네일과 SEO 메타데이터 교체. 기존 이미지 URL 호환 유지.
 - [x] Node 24.19.0 프로덕션 빌드, 기존 141개 테스트, ESLint/Oxlint 통과.
 - [x] 320px 전체 라우트 가로 넘침 없음, 375px 로그인/회원가입 및 OG 이미지 시각 확인.
-- [ ] 새 배포 도메인이 확정되면 canonical/OG URL과 robots/sitemap origin을
-  함께 갱신. 후속 지시로 과거 origin은 제거됨; 새 도메인 확정 대기.
+- [x] canonical/OG URL과 robots/sitemap origin을 `midproof.vercel.app`으로
+  갱신하고 2026-09-17 공개 배포 확인.
 - [ ] 백엔드 가용 상태에서 데이터가 있는 화면과 실제 v2 증명 E2E 재검증.
   이번 범위는 화면 수정이며 API/Proof Server를 실행·수정하지 않았음.
 

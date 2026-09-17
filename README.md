@@ -7,10 +7,13 @@ Midnight PoC를 재사용하고 있습니다.
 
 ## 공개 데모
 
-[데모 열기 — giwa-ui.vercel.app](https://giwa-ui.vercel.app)
+[데모 열기 — midproof.vercel.app](https://midproof.vercel.app)
 
 로컬 서버를 켜지 않고 브라우저에서 이용할 수 있습니다. 데모 화면과 통합
 서버가 기존 Vercel·Railway에 배포되어 있습니다.
+
+새 주소에서는 기존 데모 계정으로 다시 로그인하고, 사용하는 역할의 MetaMask
+계정을 연결하세요. 기존 계정·채권·증명 기록은 같은 서버에서 유지됩니다.
 
 1. **검증 요청자**로 로그인 → **재무 ZK 검증**에서 기존 결과를 확인하거나
    검증 요청을 만듭니다.
@@ -68,6 +71,9 @@ macOS에서는 Docker Desktop이 꺼져 있으면 자동으로 켜서 준비를 
 별도 서비스로 배포하지 않습니다. 현재 공개 서버의 증명 준비 완료와 기존
 결과 조회를 확인했습니다. 이후 백엔드 변경은 GASOK 루트에서 기존 Railway
 앱으로 CLI 업로드 한 번으로 배포합니다.
+
+Vercel 프로젝트는 `midproof`이며, 기존 UI 저장소의 `giwa-midnight` 브랜치를
+Production 자동배포 기준으로 사용합니다. 도메인 구매나 Git 저장소 이전은 하지 않았습니다.
 
 설정과 기존 서비스로 배포하는 명령은 [배포 안내](docs/ai/DEPLOYMENT.md)에 있습니다.
 현재 검증 범위와 외부 준비 사항은 [현재 상태](docs/ai/CONTEXT.md), 제출까지

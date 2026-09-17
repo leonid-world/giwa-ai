@@ -1,5 +1,64 @@
 # Current Context
 
+## 2026-09-17 Free MidProof domain migration
+
+The owner explicitly chose `midproof.vercel.app` and approved updating the
+existing Vercel project, removing the mistaken `midproof.app` association,
+both Railway frontend-origin settings, production Git branch, public metadata
+and documentation. No domain purchase or repository move is part of this work.
+
+The requested free domain was successfully added and serves HTTPS 200. Vercel
+project ID `prj_7aIQ9LeEsb5NVOFfDSN9qinLv0Md` is unchanged; its display name is
+now `midproof`, with the same Git repository and 13 Production variables. The
+Production branch was changed from `main` to `giwa-midnight` in the dashboard
+and confirmed through the project API. The mistaken custom-domain association
+was removed. The old broken redirect was first cleared to restore access during
+the transition, then changed to a 307 redirect to `midproof.vercel.app` after
+the new frontend and backend were ready. Public GET checks confirmed 307 for
+both `/` and `/login?migration-check=2`, preserving the path and query. The final
+project domain list contains only the new primary address and the old redirect.
+
+Source audit found no frontend-hostname dependency in Spring/Midnight business
+logic, signatures, database records or persistent proof/wallet state. Both
+`CORS_ALLOWED_ORIGINS` and `MIDNIGHT_DEMO_ALLOWED_ORIGINS` must explicitly allow
+`https://giwa-ui.vercel.app,https://midproof.vercel.app`. The API URL remains
+`https://giwa-api-production.up.railway.app`; internal loopback endpoints stay
+unchanged. Backend source, contracts, keys and database migrations are unnecessary.
+Browser login tokens and pending-transaction recovery records are origin-scoped;
+new-site login and MetaMask permissions must be established separately.
+
+UI metadata commit `d223f0a2a650c23bb33845f5a0bca1c9a5a7d3ad` contains only
+index metadata, robots, a one-entry sitemap and its README. Production build and
+static output checks pass. Source packaging and a fresh actual proof/transaction
+rehearsal remain unfinished submission tasks, independent of this URL migration.
+
+Git push automatically created Vercel Production deployment
+`dpl_CeMWG13gaYzBCn72ko5cRTcLhnUw` (`source=git`, READY, alias assigned).
+Both `gitSource.sha` and `githubCommitSha` match `d223f0a`; ref is
+`giwa-midnight`. Public HTML plus seven JS/CSS/brand/robots/sitemap files match
+the local production build by SHA-256. No manual CLI deployment was needed.
+
+Railway deployment `3efba8fd-5d3f-4b5a-bd4f-60bfda3f4727` is SUCCESS and the
+only active deployment. Both origin variables were updated together, followed
+by one redeploy of the existing runtime. Image digest remains
+`sha256:62e659606c5e0f3bc6053e2695d8adc1b2fd9ab11ceba7b40f50110ccd5d7efa`;
+the same volume and state are preserved. Health/readiness return 200 and
+proofReady=true. New-origin preflights return 204; Seller login, amount policy
+and assigned proof reads return 200 with the exact new allowed origin.
+Unapproved origins return 403 and an unauthenticated proof challenge returns
+401. Existing-origin requests remain allowed for compatibility.
+
+Chrome on the new HTTPS origin successfully logged into the Seller demo,
+showed proof readiness, the historical expired request and the unchanged
+registered `0x6060…` Seller wallet. The former Funder page showed the existing
+large TOKENIZED receivable without a pending synchronization recovery card.
+No new financial transaction or proof was initiated for this migration.
+New-origin MetaMask permission was requested through the UI. After the browser
+returned the same selected Seller `0x60602ed43987ea474a85c12a4e768dc8062b4361`,
+the existing wallet was confirmed through the normal connection action and the
+UI displayed `회사 지갑이 연결되었습니다.`. No transaction or proof signing was
+requested. Buyer/Funder wallet rehearsals remain separate submission checks.
+
 ## 2026-09-17 Owner requested committing, pushing and deploying all changes
 
 The owner explicitly requested publishing all current source changes and completing
